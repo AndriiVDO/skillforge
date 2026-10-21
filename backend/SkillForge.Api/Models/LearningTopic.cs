@@ -10,5 +10,13 @@ public sealed class LearningTopic
 
     public string Category { get; set; } = "";
 
+    public string Description { get; set; } = "";
+
+    public string Outcome { get; set; } = "";
+
     public int TaskCount { get; set; }
+
+    public List<LearningLesson> Lessons { get; set; } = [];
+
+    public List<LearningResource> Resources { get; set; } = [];
 }

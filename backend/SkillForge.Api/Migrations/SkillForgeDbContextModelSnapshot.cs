@@ -21,6 +21,68 @@ namespace SkillForge.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SkillForge.Api.Models.LearningLesson", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("TopicId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TopicId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("lessons", (string)null);
+                });
+
+            modelBuilder.Entity("SkillForge.Api.Models.LearningResource", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("TopicId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TopicId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("resources", (string)null);
+                });
+
             modelBuilder.Entity("SkillForge.Api.Models.LearningTopic", b =>
                 {
                     b.Property<int>("Id")
@@ -33,6 +95,20 @@ namespace SkillForge.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasDefaultValue("");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -59,6 +135,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 1,
                             Category = "Development",
+                            Description = "",
+                            Outcome = "",
                             Slug = "web-development",
                             TaskCount = 4,
                             Title = "Web Development"
@@ -67,6 +145,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 2,
                             Category = "Content",
+                            Description = "",
+                            Outcome = "",
                             Slug = "cms",
                             TaskCount = 3,
                             Title = "Content Management"
@@ -75,6 +155,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 3,
                             Category = "Systems",
+                            Description = "",
+                            Outcome = "",
                             Slug = "linux",
                             TaskCount = 3,
                             Title = "Linux Foundations"
@@ -83,6 +165,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 4,
                             Category = "Operations",
+                            Description = "",
+                            Outcome = "",
                             Slug = "devops",
                             TaskCount = 3,
                             Title = "DevOps Essentials"
@@ -91,10 +175,41 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 5,
                             Category = "Security",
+                            Description = "",
+                            Outcome = "",
                             Slug = "web-security",
                             TaskCount = 3,
                             Title = "Web Security"
                         });
+                });
+
+            modelBuilder.Entity("SkillForge.Api.Models.LearningLesson", b =>
+                {
+                    b.HasOne("SkillForge.Api.Models.LearningTopic", "Topic")
+                        .WithMany("Lessons")
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("SkillForge.Api.Models.LearningResource", b =>
+                {
+                    b.HasOne("SkillForge.Api.Models.LearningTopic", "Topic")
+                        .WithMany("Resources")
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("SkillForge.Api.Models.LearningTopic", b =>
+                {
+                    b.Navigation("Lessons");
+
+                    b.Navigation("Resources");
                 });
 #pragma warning restore 612, 618
         }
