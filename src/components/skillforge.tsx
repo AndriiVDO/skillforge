@@ -4,14 +4,10 @@ import { TopicNotes } from "@/components/topic-notes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { topics, type Topic } from "@/lib/topics";
+import type { Topic } from "@/lib/topics";
 
 const STORAGE_KEY = "skillforge.completed-lessons.v1";
 const PROGRESS_EVENT = "skillforge-progress";
-
-const validLessonIds = new Set(
-  topics.flatMap((topic) => topic.lessons.map((lesson) => lesson.id)),
-);
 
 function readProgress(): string[] {
   try {
@@ -25,10 +21,7 @@ function readProgress(): string[] {
 
     return [
       ...new Set(
-        parsed.filter(
-          (value): value is string =>
-            typeof value === "string" && validLessonIds.has(value),
-        ),
+        parsed.filter((value): value is string => typeof value === "string"),
       ),
     ];
   } catch {
@@ -168,8 +161,10 @@ function TopicCard({
   ready: boolean;
 }) {
   const done = getCompletedCount(topic, completed);
-  const percent = Math.round((done / topic.lessons.length) * 100);
-
+  const percent =
+    topic.lessons.length === 0
+      ? 0
+      : Math.round((done / topic.lessons.length) * 100);
   return (
     <Link href={`/topics/${topic.slug}`} className="topic-card">
       <div className="card-top">
@@ -203,6 +198,13 @@ export function Dashboard({ topics }: { topics: Topic[] }) {
 
   const totalLessons = topics.reduce(
     (total, topic) => total + topic.lessons.length,
+    0,
+  );
+
+  const completedTaskCount = topics.reduce(
+    (total, topic) =>
+      total +
+      topic.lessons.filter((lesson) => completed.includes(lesson.id)).length,
     0,
   );
 
@@ -256,7 +258,7 @@ export function Dashboard({ topics }: { topics: Topic[] }) {
         <div className="stat-card">
           <span>Completed tasks</span>
           <strong>
-            {ready ? completed.length.toString().padStart(2, "0") : "—"}
+            {ready ? completedTaskCount.toString().padStart(2, "0") : "—"}
             <small> / {totalLessons}</small>
           </strong>
           <p>Practical steps you have finished</p>
@@ -389,8 +391,10 @@ export function TopicDetail({ topic }: { topic: Topic }) {
   const { completed, ready, storageError, toggleLesson } = useProgress();
 
   const done = getCompletedCount(topic, completed);
-  const percent = Math.round((done / topic.lessons.length) * 100);
-
+  const percent =
+    topic.lessons.length === 0
+      ? 0
+      : Math.round((done / topic.lessons.length) * 100);
   return (
     <>
       <Link href="/topics" className="back-link">

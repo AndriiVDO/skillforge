@@ -8,6 +8,8 @@ public sealed class SkillForgeDbContext(
 ) : DbContext(options)
 {
     public DbSet<LearningTopic> Topics => Set<LearningTopic>();
+    public DbSet<LearningLesson> Lessons => Set<LearningLesson>();
+    public DbSet<LearningResource> Resources => Set<LearningResource>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -32,47 +34,63 @@ public sealed class SkillForgeDbContext(
             .HasMaxLength(100)
             .IsRequired();
 
-        topic.HasData(
-            new LearningTopic
-            {
-                Id = 1,
-                Slug = "web-development",
-                Title = "Web Development",
-                Category = "Development",
-                TaskCount = 4
-            },
-            new LearningTopic
-            {
-                Id = 2,
-                Slug = "cms",
-                Title = "Content Management",
-                Category = "Content",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 3,
-                Slug = "linux",
-                Title = "Linux Foundations",
-                Category = "Systems",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 4,
-                Slug = "devops",
-                Title = "DevOps Essentials",
-                Category = "Operations",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 5,
-                Slug = "web-security",
-                Title = "Web Security",
-                Category = "Security",
-                TaskCount = 3
-            }
-        );
+        topic.Property(item => item.Description)
+    .HasMaxLength(2000)
+    .HasDefaultValue("")
+    .IsRequired();
+
+        topic.Property(item => item.Outcome)
+            .HasMaxLength(2000)
+            .HasDefaultValue("")
+            .IsRequired();
+
+        var lesson = modelBuilder.Entity<LearningLesson>();
+
+        lesson.ToTable("lessons");
+
+        lesson.HasKey(item => item.Id);
+
+        lesson.Property(item => item.Id)
+            .HasMaxLength(100);
+
+        lesson.Property(item => item.Title)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        lesson.Property(item => item.Description)
+            .HasMaxLength(4000)
+            .IsRequired();
+
+        lesson.HasIndex(item => new { item.TopicId, item.Position })
+            .IsUnique();
+
+        lesson.HasOne(item => item.Topic)
+            .WithMany(item => item.Lessons)
+            .HasForeignKey(item => item.TopicId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var resource = modelBuilder.Entity<LearningResource>();
+
+        resource.ToTable("resources");
+
+        resource.HasKey(item => item.Id);
+
+        resource.Property(item => item.Title)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        resource.Property(item => item.Url)
+            .HasMaxLength(2048)
+            .IsRequired();
+
+        resource.HasIndex(item => new { item.TopicId, item.Position })
+            .IsUnique();
+
+        resource.HasOne(item => item.Topic)
+            .WithMany(item => item.Resources)
+            .HasForeignKey(item => item.TopicId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        LearningContentSeed.Configure(modelBuilder);
     }
 }

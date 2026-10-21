@@ -5,27 +5,19 @@ import { notFound } from "next/navigation";
 import { TopicDetail } from "@/components/skillforge";
 import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { getApiTopics } from "@/lib/api-topics";
-import { topics as localTopics } from "@/lib/topics";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
+export const metadata: Metadata = {
+  title: "Learning topic",
+};
+
+// Representative route for build-time prerender validation.
+// The actual topic content is fetched at request time.
 export function generateStaticParams() {
-  return localTopics.map((topic) => ({
-    slug: topic.slug,
-  }));
-}
-
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const topic = localTopics.find((item) => item.slug === slug);
-
-  return {
-    title: topic?.title ?? "Learning topic",
-  };
+  return [{ slug: "linux" }];
 }
 
 async function TopicContent({ params }: PageProps) {

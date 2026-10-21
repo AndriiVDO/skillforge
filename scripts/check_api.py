@@ -51,6 +51,31 @@ check(len(topics) == len(expected_slugs), "Unexpected or duplicate topics.")
 linux = get_json("/api/topics/linux")
 check(linux["slug"] == "linux", "Topic detail returned the wrong topic.")
 check(linux["taskCount"] == 3, "Linux task count is incorrect.")
+check(
+    [lesson["id"] for lesson in linux["lessons"]]
+    == ["linux-files", "linux-permissions", "linux-processes"],
+    "Linux lessons are missing or incorrectly ordered.",
+)
+
+check(
+    len(linux["resources"]) == 2,
+    "Linux resources are missing.",
+)
+
+check(
+    bool(linux["description"]) and bool(linux["outcome"]),
+    "Linux description or outcome is missing.",
+)
+
+check(
+    sum(len(topic["lessons"]) for topic in topics) == 16,
+    "Expected 16 seeded lessons.",
+)
+
+check(
+    sum(len(topic["resources"]) for topic in topics) == 11,
+    "Expected 11 seeded resources.",
+)
 
 try:
     get_json("/api/topics/unknown")

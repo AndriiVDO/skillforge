@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SkillForge.Api.Data;
+using SkillForge.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,16 +54,13 @@ app.MapGet("/api/topics", async (
 {
     var topics = await db.Topics
         .AsNoTracking()
+        .Include(topic => topic.Lessons)
+        .Include(topic => topic.Resources)
+        .AsSplitQuery()
         .OrderBy(topic => topic.Id)
-        .Select(topic => new TopicSummary(
-            topic.Slug,
-            topic.Title,
-            topic.Category,
-            topic.TaskCount
-        ))
         .ToListAsync(cancellationToken);
 
-    return Results.Ok(topics);
+    return Results.Ok(topics.Select(ToResponse).ToArray());
 });
 
 app.MapGet("/api/topics/{slug}", async (
@@ -72,14 +70,13 @@ app.MapGet("/api/topics/{slug}", async (
 {
     var topic = await db.Topics
         .AsNoTracking()
-        .Where(topic => topic.Slug == slug)
-        .Select(topic => new TopicSummary(
-            topic.Slug,
-            topic.Title,
-            topic.Category,
-            topic.TaskCount
-        ))
-        .SingleOrDefaultAsync(cancellationToken);
+        .Include(topic => topic.Lessons)
+        .Include(topic => topic.Resources)
+        .AsSplitQuery()
+        .SingleOrDefaultAsync(
+            topic => topic.Slug == slug,
+            cancellationToken
+        );
 
     if (topic is null)
     {
@@ -89,14 +86,56 @@ app.MapGet("/api/topics/{slug}", async (
         });
     }
 
-    return Results.Ok(topic);
+    return Results.Ok(ToResponse(topic));
 });
 
 app.Run();
 
-public sealed record TopicSummary(
+static TopicResponse ToResponse(LearningTopic topic)
+{
+    return new TopicResponse(
+        topic.Slug,
+        topic.Title,
+        topic.Category,
+        topic.Description,
+        topic.Outcome,
+        topic.Lessons.Count,
+        topic.Lessons
+            .OrderBy(lesson => lesson.Position)
+            .Select(lesson => new LessonResponse(
+                lesson.Id,
+                lesson.Title,
+                lesson.Description
+            ))
+            .ToArray(),
+        topic.Resources
+            .OrderBy(resource => resource.Position)
+            .Select(resource => new ResourceResponse(
+                resource.Title,
+                resource.Url
+            ))
+            .ToArray()
+    );
+}
+
+public sealed record TopicResponse(
     string Slug,
     string Title,
     string Category,
-    int TaskCount
+    string Description,
+    string Outcome,
+    int TaskCount,
+    LessonResponse[] Lessons,
+    ResourceResponse[] Resources
+);
+
+public sealed record LessonResponse(
+    string Id,
+    string Title,
+    string Description
+);
+
+public sealed record ResourceResponse(
+    string Title,
+    string Url
 );

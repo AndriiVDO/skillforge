@@ -1,29 +1,49 @@
 import { cache } from "react";
-import { topics as localTopics, type Topic } from "@/lib/topics";
+import type { Lesson, LearningResource, Topic } from "@/lib/topics";
 
-type TopicSummary = {
-  slug: string;
-  title: string;
-  category: string;
-  taskCount: number;
-};
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-function isTopicSummary(value: unknown): value is TopicSummary {
-  if (typeof value !== "object" || value === null) {
+function isLesson(value: unknown): value is Lesson {
+  return (
+    isObject(value) &&
+    typeof value.id === "string" &&
+    typeof value.title === "string" &&
+    typeof value.description === "string"
+  );
+}
+
+function isResource(value: unknown): value is LearningResource {
+  if (
+    !isObject(value) ||
+    typeof value.title !== "string" ||
+    typeof value.url !== "string"
+  ) {
     return false;
   }
 
+  try {
+    const url = new URL(value.url);
+
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function isTopic(value: unknown): value is Topic {
   return (
-    "slug" in value &&
+    isObject(value) &&
     typeof value.slug === "string" &&
-    "title" in value &&
     typeof value.title === "string" &&
-    "category" in value &&
     typeof value.category === "string" &&
-    "taskCount" in value &&
-    typeof value.taskCount === "number" &&
-    Number.isInteger(value.taskCount) &&
-    value.taskCount >= 0
+    typeof value.description === "string" &&
+    typeof value.outcome === "string" &&
+    Array.isArray(value.lessons) &&
+    value.lessons.every(isLesson) &&
+    Array.isArray(value.resources) &&
+    value.resources.every(isResource)
   );
 }
 
@@ -47,39 +67,30 @@ export const getApiTopics = cache(async (): Promise<Topic[] | null> => {
 
     const data: unknown = await response.json();
 
-    if (!Array.isArray(data) || !data.every(isTopicSummary)) {
+    if (!Array.isArray(data) || !data.every(isTopic)) {
       throw new Error("Topics API returned an invalid response.");
     }
 
     const slugs = new Set<string>();
+    const lessonIds = new Set<string>();
 
-    return data.map((summary) => {
-      if (slugs.has(summary.slug)) {
-        throw new Error(`Duplicate topic slug: ${summary.slug}`);
+    for (const topic of data) {
+      if (slugs.has(topic.slug)) {
+        throw new Error(`Duplicate topic slug: ${topic.slug}`);
       }
 
-      slugs.add(summary.slug);
+      slugs.add(topic.slug);
 
-      const content = localTopics.find((topic) => topic.slug === summary.slug);
+      for (const lesson of topic.lessons) {
+        if (lessonIds.has(lesson.id)) {
+          throw new Error(`Duplicate lesson ID: ${lesson.id}`);
+        }
 
-      if (!content) {
-        throw new Error(
-          `Learning content is missing for topic: ${summary.slug}`,
-        );
+        lessonIds.add(lesson.id);
       }
+    }
 
-      if (summary.taskCount !== content.lessons.length) {
-        throw new Error(
-          `Task count does not match learning content: ${summary.slug}`,
-        );
-      }
-
-      return {
-        ...content,
-        title: summary.title,
-        category: summary.category,
-      };
-    });
+    return data;
   } catch (error) {
     console.error("Could not load topics:", error);
     return null;
