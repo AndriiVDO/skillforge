@@ -2,6 +2,8 @@
 
 A personal learning workspace for building technical skills through practical tasks.
 
+[![CI](https://github.com/AndriiVDO/skillforge/actions/workflows/ci.yml/badge.svg)](https://github.com/AndriiVDO/skillforge/actions/workflows/ci.yml)
+
 ## Features
 
 - Dashboard with learning statistics
@@ -71,7 +73,7 @@ against known task IDs before being displayed.
 - [ ] Store data in PostgreSQL
 - [ ] Add authentication and user-specific progress
 - [ ] Containerize the application
-- [ ] Add automated checks with GitHub Actions
+- [x] Add automated checks with GitHub Actions
 
 ## Learning goals
 
