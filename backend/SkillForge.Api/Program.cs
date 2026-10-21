@@ -1,40 +1,19 @@
+using Microsoft.EntityFrameworkCore;
+using SkillForge.Api.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+var connectionString = builder.Configuration
+    .GetConnectionString("SkillForge")
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:SkillForge is not configured."
+    );
 
-TopicSummary[] topics =
-[
-    new(
-        "web-development",
-        "Web Development",
-        "Development",
-        4
-    ),
-    new(
-        "cms",
-        "Content Management",
-        "Content",
-        3
-    ),
-    new(
-        "linux",
-        "Linux Foundations",
-        "Systems",
-        3
-    ),
-    new(
-        "devops",
-        "DevOps Essentials",
-        "Operations",
-        3
-    ),
-    new(
-        "web-security",
-        "Web Security",
-        "Security",
-        3
-    )
-];
+builder.Services.AddDbContext<SkillForgeDbContext>(options =>
+    options.UseNpgsql(connectionString)
+);
+
+var app = builder.Build();
 
 app.MapGet("/api/health", () =>
 {
@@ -46,14 +25,61 @@ app.MapGet("/api/health", () =>
     });
 });
 
-app.MapGet("/api/topics", () =>
+app.MapGet("/api/health/db", async (
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken) =>
 {
+    var connected = await db.Database
+        .CanConnectAsync(cancellationToken);
+
+    if (!connected)
+    {
+        return Results.Problem(
+            title: "Database unavailable.",
+            statusCode: StatusCodes.Status503ServiceUnavailable
+        );
+    }
+
+    return Results.Ok(new
+    {
+        status = "ok",
+        database = "PostgreSQL"
+    });
+});
+
+app.MapGet("/api/topics", async (
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken) =>
+{
+    var topics = await db.Topics
+        .AsNoTracking()
+        .OrderBy(topic => topic.Id)
+        .Select(topic => new TopicSummary(
+            topic.Slug,
+            topic.Title,
+            topic.Category,
+            topic.TaskCount
+        ))
+        .ToListAsync(cancellationToken);
+
     return Results.Ok(topics);
 });
 
-app.MapGet("/api/topics/{slug}", (string slug) =>
+app.MapGet("/api/topics/{slug}", async (
+    string slug,
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken) =>
 {
-    var topic = topics.FirstOrDefault(topic => topic.Slug == slug);
+    var topic = await db.Topics
+        .AsNoTracking()
+        .Where(topic => topic.Slug == slug)
+        .Select(topic => new TopicSummary(
+            topic.Slug,
+            topic.Title,
+            topic.Category,
+            topic.TaskCount
+        ))
+        .SingleOrDefaultAsync(cancellationToken);
 
     if (topic is null)
     {
