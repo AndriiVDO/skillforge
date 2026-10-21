@@ -91,47 +91,6 @@ public sealed class SkillForgeDbContext(
             .HasForeignKey(item => item.TopicId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        topic.HasData(
-            new LearningTopic
-            {
-                Id = 1,
-                Slug = "web-development",
-                Title = "Web Development",
-                Category = "Development",
-                TaskCount = 4
-            },
-            new LearningTopic
-            {
-                Id = 2,
-                Slug = "cms",
-                Title = "Content Management",
-                Category = "Content",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 3,
-                Slug = "linux",
-                Title = "Linux Foundations",
-                Category = "Systems",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 4,
-                Slug = "devops",
-                Title = "DevOps Essentials",
-                Category = "Operations",
-                TaskCount = 3
-            },
-            new LearningTopic
-            {
-                Id = 5,
-                Slug = "web-security",
-                Title = "Web Security",
-                Category = "Security",
-                TaskCount = 3
-            }
-        );
+        LearningContentSeed.Configure(modelBuilder);
     }
 }

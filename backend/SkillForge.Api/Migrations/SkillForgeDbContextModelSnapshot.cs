@@ -49,6 +49,136 @@ namespace SkillForge.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("lessons", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "web-html",
+                            Description = "Explain when to use main, nav, section, headings, buttons, and links.",
+                            Position = 1,
+                            Title = "Understand semantic HTML",
+                            TopicId = 1
+                        },
+                        new
+                        {
+                            Id = "web-css",
+                            Description = "Use Grid, Flexbox, spacing, and breakpoints to support different screens.",
+                            Position = 2,
+                            Title = "Build a responsive layout",
+                            TopicId = 1
+                        },
+                        new
+                        {
+                            Id = "web-react",
+                            Description = "Explain props, state, events, and how a component renders data.",
+                            Position = 3,
+                            Title = "Understand React components",
+                            TopicId = 1
+                        },
+                        new
+                        {
+                            Id = "web-next",
+                            Description = "Create pages and explain how folders map to URLs.",
+                            Position = 4,
+                            Title = "Understand Next.js routing",
+                            TopicId = 1
+                        },
+                        new
+                        {
+                            Id = "cms-basics",
+                            Description = "Separate the responsibilities of content storage and presentation.",
+                            Position = 1,
+                            Title = "Explain what a CMS does",
+                            TopicId = 2
+                        },
+                        new
+                        {
+                            Id = "cms-schema",
+                            Description = "Define an article with a title, slug, body, and publication date.",
+                            Position = 2,
+                            Title = "Design a content schema",
+                            TopicId = 2
+                        },
+                        new
+                        {
+                            Id = "cms-query",
+                            Description = "Retrieve published articles and handle missing content.",
+                            Position = 3,
+                            Title = "Fetch and display content",
+                            TopicId = 2
+                        },
+                        new
+                        {
+                            Id = "linux-files",
+                            Description = "Practise pwd, ls, cd, mkdir, cp, mv, and reading text files.",
+                            Position = 1,
+                            Title = "Navigate files and directories",
+                            TopicId = 3
+                        },
+                        new
+                        {
+                            Id = "linux-permissions",
+                            Description = "Explain users, groups, and read, write, and execute permissions.",
+                            Position = 2,
+                            Title = "Understand file permissions",
+                            TopicId = 3
+                        },
+                        new
+                        {
+                            Id = "linux-processes",
+                            Description = "Find a running process and inspect application output.",
+                            Position = 3,
+                            Title = "Inspect processes and logs",
+                            TopicId = 3
+                        },
+                        new
+                        {
+                            Id = "devops-docker",
+                            Description = "Explain the difference between an image and a running container.",
+                            Position = 1,
+                            Title = "Build a Docker image",
+                            TopicId = 4
+                        },
+                        new
+                        {
+                            Id = "devops-compose",
+                            Description = "Connect an application and database using configuration.",
+                            Position = 2,
+                            Title = "Run services with Compose",
+                            TopicId = 4
+                        },
+                        new
+                        {
+                            Id = "devops-ci",
+                            Description = "Run automated checks when code is pushed to GitHub.",
+                            Position = 3,
+                            Title = "Create a CI workflow",
+                            TopicId = 4
+                        },
+                        new
+                        {
+                            Id = "security-http",
+                            Description = "Explain requests, responses, cookies, and authenticated sessions.",
+                            Position = 1,
+                            Title = "Understand HTTP and sessions",
+                            TopicId = 5
+                        },
+                        new
+                        {
+                            Id = "security-access",
+                            Description = "Verify that a user can access only the data they are allowed to use.",
+                            Position = 2,
+                            Title = "Check access control",
+                            TopicId = 5
+                        },
+                        new
+                        {
+                            Id = "security-lab",
+                            Description = "Record the cause, reproduction steps, and fix for a lab vulnerability.",
+                            Position = 3,
+                            Title = "Complete a training lab",
+                            TopicId = 5
+                        });
                 });
 
             modelBuilder.Entity("SkillForge.Api.Models.LearningResource", b =>
@@ -81,6 +211,96 @@ namespace SkillForge.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("resources", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 101,
+                            Position = 1,
+                            Title = "MDN Web Docs",
+                            TopicId = 1,
+                            Url = "https://developer.mozilla.org/en-US/docs/Learn_web_development"
+                        },
+                        new
+                        {
+                            Id = 102,
+                            Position = 2,
+                            Title = "React Learn",
+                            TopicId = 1,
+                            Url = "https://react.dev/learn"
+                        },
+                        new
+                        {
+                            Id = 103,
+                            Position = 3,
+                            Title = "Next.js Documentation",
+                            TopicId = 1,
+                            Url = "https://nextjs.org/docs"
+                        },
+                        new
+                        {
+                            Id = 201,
+                            Position = 1,
+                            Title = "Sanity Documentation",
+                            TopicId = 2,
+                            Url = "https://www.sanity.io/docs"
+                        },
+                        new
+                        {
+                            Id = 202,
+                            Position = 2,
+                            Title = "WordPress Learn",
+                            TopicId = 2,
+                            Url = "https://learn.wordpress.org/"
+                        },
+                        new
+                        {
+                            Id = 301,
+                            Position = 1,
+                            Title = "Ubuntu Tutorials",
+                            TopicId = 3,
+                            Url = "https://ubuntu.com/tutorials"
+                        },
+                        new
+                        {
+                            Id = 302,
+                            Position = 2,
+                            Title = "GNU Bash Manual",
+                            TopicId = 3,
+                            Url = "https://www.gnu.org/software/bash/manual/"
+                        },
+                        new
+                        {
+                            Id = 401,
+                            Position = 1,
+                            Title = "Docker Get Started",
+                            TopicId = 4,
+                            Url = "https://docs.docker.com/get-started/"
+                        },
+                        new
+                        {
+                            Id = 402,
+                            Position = 2,
+                            Title = "GitHub Actions Documentation",
+                            TopicId = 4,
+                            Url = "https://docs.github.com/en/actions"
+                        },
+                        new
+                        {
+                            Id = 501,
+                            Position = 1,
+                            Title = "PortSwigger Web Security Academy",
+                            TopicId = 5,
+                            Url = "https://portswigger.net/web-security"
+                        },
+                        new
+                        {
+                            Id = 502,
+                            Position = 2,
+                            Title = "Hacker101",
+                            TopicId = 5,
+                            Url = "https://www.hacker101.com/"
+                        });
                 });
 
             modelBuilder.Entity("SkillForge.Api.Models.LearningTopic", b =>
@@ -135,8 +355,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 1,
                             Category = "Development",
-                            Description = "",
-                            Outcome = "",
+                            Description = "Build interfaces and understand how browsers, components, and servers work together.",
+                            Outcome = "Build and publish the first version of SkillForge.",
                             Slug = "web-development",
                             TaskCount = 4,
                             Title = "Web Development"
@@ -145,8 +365,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 2,
                             Category = "Content",
-                            Description = "",
-                            Outcome = "",
+                            Description = "Structure content and let editors manage it independently from application code.",
+                            Outcome = "Create a small learning-article library powered by a CMS.",
                             Slug = "cms",
                             TaskCount = 3,
                             Title = "Content Management"
@@ -155,8 +375,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 3,
                             Category = "Systems",
-                            Description = "",
-                            Outcome = "",
+                            Description = "Navigate a Linux system and understand files, permissions, processes, and logs.",
+                            Outcome = "Document how to run and troubleshoot an application on Linux.",
                             Slug = "linux",
                             TaskCount = 3,
                             Title = "Linux Foundations"
@@ -165,8 +385,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 4,
                             Category = "Operations",
-                            Description = "",
-                            Outcome = "",
+                            Description = "Make application builds, checks, and deployments repeatable.",
+                            Outcome = "Run a project with Docker and verify it through GitHub Actions.",
                             Slug = "devops",
                             TaskCount = 3,
                             Title = "DevOps Essentials"
@@ -175,8 +395,8 @@ namespace SkillForge.Api.Migrations
                         {
                             Id = 5,
                             Category = "Security",
-                            Description = "",
-                            Outcome = "",
+                            Description = "Understand how applications protect accounts, input, and private data.",
+                            Outcome = "Document and fix a security issue in a local training application.",
                             Slug = "web-security",
                             TaskCount = 3,
                             Title = "Web Security"
