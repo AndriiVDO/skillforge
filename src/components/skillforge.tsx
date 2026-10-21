@@ -95,6 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigation = [
     { href: "/", label: "Overview" },
     { href: "/topics", label: "Learning topics" },
+    { href: "/system", label: "System" },
   ];
 
   return (

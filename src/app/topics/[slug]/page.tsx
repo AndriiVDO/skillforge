@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { TopicDetail } from "@/components/skillforge";
 import { topics } from "@/lib/topics";
@@ -24,7 +25,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function TopicPage({ params }: PageProps) {
+async function TopicContent({ params }: PageProps) {
   const { slug } = await params;
   const topic = topics.find((item) => item.slug === slug);
 
@@ -33,4 +34,19 @@ export default async function TopicPage({ params }: PageProps) {
   }
 
   return <TopicDetail topic={topic} />;
+}
+
+export default function TopicPage({ params }: PageProps) {
+  return (
+    <Suspense
+      fallback={
+        <section className="panel" role="status">
+          <h2>Loading topic…</h2>
+          <p className="muted">Preparing your learning checklist.</p>
+        </section>
+      }
+    >
+      <TopicContent params={params} />
+    </Suspense>
+  );
 }
