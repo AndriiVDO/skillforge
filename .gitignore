@@ -50,3 +50,5 @@ next-env.d.ts
 *.suo
 
 !.env.example
+
+.env.database
