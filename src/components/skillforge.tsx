@@ -198,7 +198,7 @@ function TopicCard({
   );
 }
 
-export function Dashboard() {
+export function Dashboard({ topics }: { topics: Topic[] }) {
   const { completed, ready } = useProgress();
 
   const totalLessons = topics.reduce(
@@ -323,7 +323,7 @@ export function Dashboard() {
   );
 }
 
-export function TopicsCatalog() {
+export function TopicsCatalog({ topics }: { topics: Topic[] }) {
   const { completed, ready } = useProgress();
   const [query, setQuery] = useState("");
 

@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { TopicDetail } from "@/components/skillforge";
-import { topics } from "@/lib/topics";
+import { CatalogUnavailable } from "@/components/catalog-unavailable";
+import { getApiTopics } from "@/lib/api-topics";
+import { topics as localTopics } from "@/lib/topics";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
 };
 
 export function generateStaticParams() {
-  return topics.map((topic) => ({
+  return localTopics.map((topic) => ({
     slug: topic.slug,
   }));
 }
@@ -18,15 +21,23 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const topic = topics.find((item) => item.slug === slug);
+  const topic = localTopics.find((item) => item.slug === slug);
 
   return {
-    title: topic?.title ?? "Topic not found",
+    title: topic?.title ?? "Learning topic",
   };
 }
 
 async function TopicContent({ params }: PageProps) {
+  await connection();
+
   const { slug } = await params;
+  const topics = await getApiTopics();
+
+  if (topics === null) {
+    return <CatalogUnavailable />;
+  }
+
   const topic = topics.find((item) => item.slug === slug);
 
   if (!topic) {
