@@ -1,0 +1,499 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { topics, type Topic } from "@/lib/topics";
+
+const STORAGE_KEY = "skillforge.completed-lessons.v1";
+const PROGRESS_EVENT = "skillforge-progress";
+
+const validLessonIds = new Set(
+  topics.flatMap((topic) => topic.lessons.map((lesson) => lesson.id)),
+);
+
+function readProgress(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+
+    if (!raw) return [];
+
+    const parsed: unknown = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return [
+      ...new Set(
+        parsed.filter(
+          (value): value is string =>
+            typeof value === "string" && validLessonIds.has(value),
+        ),
+      ),
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function useProgress() {
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [ready, setReady] = useState(false);
+  const [storageError, setStorageError] = useState(false);
+
+  useEffect(() => {
+    function syncProgress() {
+      setCompleted(readProgress());
+      setReady(true);
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key === STORAGE_KEY || event.key === null) {
+        syncProgress();
+      }
+    }
+
+    syncProgress();
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(PROGRESS_EVENT, syncProgress);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(PROGRESS_EVENT, syncProgress);
+    };
+  }, []);
+
+  function toggleLesson(id: string) {
+    if (!ready) return;
+
+    const current = readProgress();
+    const next = current.includes(id)
+      ? current.filter((item) => item !== id)
+      : [...current, id];
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      setCompleted(next);
+      setStorageError(false);
+      window.dispatchEvent(new Event(PROGRESS_EVENT));
+    } catch {
+      setStorageError(true);
+    }
+  }
+
+  return { completed, ready, storageError, toggleLesson };
+}
+
+function getCompletedCount(topic: Topic, completed: string[]) {
+  return topic.lessons.filter((lesson) => completed.includes(lesson.id)).length;
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const navigation = [
+    { href: "/", label: "Overview" },
+    { href: "/topics", label: "Learning topics" },
+  ];
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <Link href="/" className="brand" aria-label="SkillForge home">
+          <span className="brand-mark">S</span>
+          SkillForge<span className="brand-dot">.</span>
+        </Link>
+
+        <p className="nav-label">YOUR WORKSPACE</p>
+
+        <nav className="navigation" aria-label="Main navigation">
+          {navigation.map((item) => {
+            const active =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`nav-link ${active ? "active" : ""}`}
+                aria-current={active ? "page" : undefined}
+              >
+                {item.label}
+                <span aria-hidden="true">↗</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-note">
+          <span className="eyebrow">BUILD YOUR KNOWLEDGE</span>
+          <p>Learn something. Build something. Make it yours.</p>
+          <span className="muted">Your personal learning workspace.</span>
+        </div>
+      </aside>
+
+      <div className="workspace">
+        <header className="topbar">
+          <span>Personal workspace</span>
+          <span className="workspace-status">
+            <span className="status-dot" />
+            Learning mode
+          </span>
+        </header>
+
+        <main id="main-content" className="main-content">
+          {children}
+        </main>
+
+        <footer className="footer">
+          <span>SkillForge · Built through practice</span>
+          <span>Small steps. Real skills.</span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function TopicCard({
+  topic,
+  completed,
+  ready,
+}: {
+  topic: Topic;
+  completed: string[];
+  ready: boolean;
+}) {
+  const done = getCompletedCount(topic, completed);
+  const percent = Math.round((done / topic.lessons.length) * 100);
+
+  return (
+    <Link href={`/topics/${topic.slug}`} className="topic-card">
+      <div className="card-top">
+        <span className="badge">{topic.category}</span>
+        <span className="card-arrow" aria-hidden="true">
+          ↗
+        </span>
+      </div>
+
+      <h3>{topic.title}</h3>
+      <p>{topic.description}</p>
+
+      <div className="card-progress">
+        <div className="progress-label">
+          <span>
+            {ready ? `${done} / ${topic.lessons.length} completed` : "Loading…"}
+          </span>
+          <span>{ready ? `${percent}%` : "—"}</span>
+        </div>
+
+        <div className="progress-track" aria-hidden="true">
+          <div style={{ width: `${ready ? percent : 0}%` }} />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function Dashboard() {
+  const { completed, ready } = useProgress();
+
+  const totalLessons = topics.reduce(
+    (total, topic) => total + topic.lessons.length,
+    0,
+  );
+
+  const activeTopics = topics.filter((topic) => {
+    const count = getCompletedCount(topic, completed);
+    return count > 0 && count < topic.lessons.length;
+  }).length;
+
+  const nextTopic = topics.find(
+    (topic) => getCompletedCount(topic, completed) < topic.lessons.length,
+  );
+
+  return (
+    <>
+      <section className="page-heading">
+        <span className="eyebrow">YOUR LEARNING JOURNEY</span>
+        <h1>Build skills that stick.</h1>
+        <p>
+          Turn curiosity into practical knowledge, one finished task at a time.
+        </p>
+      </section>
+
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <span className="hero-tag">LEARN → BUILD → SHARE</span>
+          <h2>Your next chapter starts with a small step.</h2>
+          <p>
+            Explore a topic, practise what you learn, and turn your progress
+            into projects you can show.
+          </p>
+          <Link href="/topics" className="button button-primary">
+            Explore learning topics <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+
+        <div className="hero-art" aria-hidden="true">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="orbit orbit-three" />
+          <span className="orbit-core">S</span>
+        </div>
+      </section>
+
+      <section className="stats-grid" aria-label="Learning statistics">
+        <div className="stat-card">
+          <span>Learning topics</span>
+          <strong>{topics.length.toString().padStart(2, "0")}</strong>
+          <p>A foundation for your next projects</p>
+        </div>
+
+        <div className="stat-card">
+          <span>Completed tasks</span>
+          <strong>
+            {ready ? completed.length.toString().padStart(2, "0") : "—"}
+            <small> / {totalLessons}</small>
+          </strong>
+          <p>Practical steps you have finished</p>
+        </div>
+
+        <div className="stat-card">
+          <span>In progress</span>
+          <strong>
+            {ready ? activeTopics.toString().padStart(2, "0") : "—"}
+          </strong>
+          <p>Topics you have started exploring</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">MAKE YOUR NEXT MOVE</span>
+            <h2>Your learning path</h2>
+          </div>
+          <Link href="/topics" className="text-link">
+            View all topics →
+          </Link>
+        </div>
+
+        <div className="topics-grid">
+          {topics.slice(0, 3).map((topic) => (
+            <TopicCard
+              key={topic.slug}
+              topic={topic}
+              completed={completed}
+              ready={ready}
+            />
+          ))}
+        </div>
+      </section>
+
+      {ready && (
+        <section className="next-step">
+          <div>
+            <span className="eyebrow">
+              {nextTopic ? "SUGGESTED NEXT STEP" : "PATH COMPLETED"}
+            </span>
+            <h2>
+              {nextTopic
+                ? `Keep moving with ${nextTopic.title}.`
+                : "You have completed every task in this learning path."}
+            </h2>
+            <p>
+              {nextTopic
+                ? nextTopic.outcome
+                : "Revisit a topic and apply what you learned in a new project."}
+            </p>
+          </div>
+          <Link
+            href={nextTopic ? `/topics/${nextTopic.slug}` : "/topics"}
+            className="button button-secondary"
+          >
+            {nextTopic ? "Open topic →" : "Review topics →"}
+          </Link>
+        </section>
+      )}
+    </>
+  );
+}
+
+export function TopicsCatalog() {
+  const { completed, ready } = useProgress();
+  const [query, setQuery] = useState("");
+
+  const filteredTopics = topics.filter((topic) =>
+    `${topic.title} ${topic.category} ${topic.description}`
+      .toLowerCase()
+      .includes(query.trim().toLowerCase()),
+  );
+
+  return (
+    <>
+      <section className="page-heading">
+        <span className="eyebrow">EXPLORE YOUR INTERESTS</span>
+        <h1>A little curiosity goes far.</h1>
+        <p>Choose a topic and start turning ideas into practical skills.</p>
+      </section>
+
+      <div className="catalog-toolbar">
+        <label className="search-field">
+          <span className="sr-only">Search topics</span>
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            placeholder="Search topics or categories..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+        <span className="muted" role="status">
+          {filteredTopics.length} topics
+        </span>
+      </div>
+
+      <div className="topics-grid">
+        {filteredTopics.map((topic) => (
+          <TopicCard
+            key={topic.slug}
+            topic={topic}
+            completed={completed}
+            ready={ready}
+          />
+        ))}
+      </div>
+
+      {filteredTopics.length === 0 && (
+        <div className="empty-state">
+          <h2>No matching topics</h2>
+          <p>Try another name or category.</p>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => setQuery("")}
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+export function TopicDetail({ topic }: { topic: Topic }) {
+  const { completed, ready, storageError, toggleLesson } = useProgress();
+
+  const done = getCompletedCount(topic, completed);
+  const percent = Math.round((done / topic.lessons.length) * 100);
+
+  return (
+    <>
+      <Link href="/topics" className="back-link">
+        ← Back to learning topics
+      </Link>
+
+      <section className="page-heading detail-heading">
+        <span className="eyebrow">{topic.category}</span>
+        <h1>{topic.title}</h1>
+        <p>{topic.description}</p>
+      </section>
+
+      <div className="detail-grid">
+        <section className="panel">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">LEARNING CHECKLIST</span>
+              <h2>One task at a time.</h2>
+            </div>
+            <span className="badge">
+              {ready ? `${done}/${topic.lessons.length}` : "…"}
+            </span>
+          </div>
+
+          <p className="checklist-intro">
+            Mark a task complete when you can explain it and demonstrate it.
+          </p>
+
+          <div className="lesson-list">
+            {topic.lessons.map((lesson, index) => {
+              const checked = completed.includes(lesson.id);
+
+              return (
+                <label
+                  key={lesson.id}
+                  className={`lesson ${checked ? "lesson-completed" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={!ready}
+                    onChange={() => toggleLesson(lesson.id)}
+                  />
+                  <span className="lesson-copy">
+                    <span className="lesson-number">
+                      TASK {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <strong>{lesson.title}</strong>
+                    <span>{lesson.description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+
+          <p className="storage-note">
+            Progress is saved in this browser. It is not synced across devices.
+          </p>
+
+          {storageError && (
+            <p className="error-message" role="alert">
+              Could not save your progress. Check whether browser storage is
+              available.
+            </p>
+          )}
+        </section>
+
+        <aside className="detail-aside">
+          <section className="panel">
+            <span className="eyebrow">YOUR PROGRESS</span>
+            <div className="large-progress">{ready ? `${percent}%` : "…"}</div>
+            <div className="progress-track" aria-hidden="true">
+              <div style={{ width: `${ready ? percent : 0}%` }} />
+            </div>
+            <p className="muted">
+              {ready ? done : "—"} of {topic.lessons.length} tasks completed
+            </p>
+          </section>
+
+          <section className="panel outcome-panel">
+            <span className="eyebrow">PRACTICAL OUTCOME</span>
+            <h2>Build something real.</h2>
+            <p>{topic.outcome}</p>
+          </section>
+
+          <section className="panel">
+            <span className="eyebrow">GO DEEPER</span>
+            <h2>Learning resources</h2>
+            <div className="resource-list">
+              {topic.resources.map((resource) => (
+                <a
+                  key={resource.url}
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {resource.title}
+                  <span aria-hidden="true">↗</span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        </aside>
+      </div>
+    </>
+  );
+}

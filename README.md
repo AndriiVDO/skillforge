@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SkillForge
 
-## Getting Started
+A personal learning workspace for building technical skills through practical tasks.
 
-First, run the development server:
+## Features
+
+- Dashboard with learning statistics
+- Searchable topic catalog
+- Individual topic pages with learning resources
+- Interactive task checklists
+- Progress saved locally in the browser
+- Responsive dark interface
+
+## Tech stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+- Browser localStorage
+
+## Getting started
+
+Install dependencies:
+
+```bash
+npm ci
+```
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open the local URL printed in the terminal.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Code checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx eslint .
+npm run build
+```
 
-## Learn More
+## Project structure
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app` — pages, routing, and shared layout
+- `src/components` — interface and interactive components
+- `src/lib/topics.ts` — topic types and learning content
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Technical decisions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The first version uses a typed local dataset to focus on interface
+development and routing.
 
-## Deploy on Vercel
+Task progress is stored in localStorage. Saved progress is validated
+against known task IDs before being displayed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Current limitations
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Progress is limited to the current browser and origin.
+- Clearing browser data removes saved progress.
+- Topics are maintained in source code.
+- Accounts, a backend, and a database are not implemented yet.
+
+## Roadmap
+
+- [ ] Create and edit learning topics
+- [ ] Add personal learning notes
+- [ ] Build an ASP.NET Core API
+- [ ] Store data in PostgreSQL
+- [ ] Add authentication and user-specific progress
+- [ ] Containerize the application
+- [ ] Add automated checks with GitHub Actions
+
+## Learning goals
+
+Understand React state, Next.js routing, TypeScript types,
+browser persistence, and accessible responsive interfaces.
