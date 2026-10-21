@@ -52,3 +52,67 @@ jobs:
 
       - name: Build backend
         run: dotnet build backend/SkillForge.Api/SkillForge.Api.csproj --configuration Release --no-restore
+
+  database:
+    name: API — PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: skillforge_test
+          POSTGRES_USER: skillforge
+          POSTGRES_PASSWORD: ci_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U skillforge -d skillforge_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      ASPNETCORE_ENVIRONMENT: Testing
+      ConnectionStrings__SkillForge: "Host=localhost;Port=5432;Database=skillforge_test;Username=skillforge;Password=ci_test_password"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Build API
+        run: dotnet build backend/SkillForge.Api --configuration Release
+
+      - name: Apply database migrations
+        run: dotnet ef database update --project backend/SkillForge.Api --configuration Release --no-build
+
+      - name: Check API against PostgreSQL
+        shell: bash
+        run: |
+          dotnet run \
+            --project backend/SkillForge.Api \
+            --configuration Release \
+            --no-build \
+            --no-launch-profile \
+            --urls http://127.0.0.1:5050 > api.log 2>&1 &
+
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+
+          python3 scripts/check_api.py
+
+      - name: Show API logs on failure
+        if: failure()
+        run: |
+          if [ -f api.log ]; then
+            cat api.log
+          fi
