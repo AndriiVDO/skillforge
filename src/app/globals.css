@@ -954,3 +954,71 @@ p {
     transition: none !important;
   }
 }
+
+.detail-main {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
+
+.notes-description {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.notes-label {
+  display: block;
+  margin: 22px 0 10px;
+  color: #d2daed;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.notes-input {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  padding: 16px;
+  resize: vertical;
+  border: 1px solid #35405b;
+  border-radius: 9px;
+  background: #0e131d;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.notes-input::placeholder {
+  color: #8792a9;
+}
+
+.notes-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.notes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  font-size: 11px;
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.notes-feedback {
+  min-height: 20px;
+  margin: 14px 0 0;
+  color: #c4ceff;
+  font-size: 12px;
+  line-height: 1.7;
+}

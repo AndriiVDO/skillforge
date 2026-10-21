@@ -1,4 +1,5 @@
 "use client";
+import { TopicNotes } from "@/components/topic-notes";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -402,59 +403,64 @@ export function TopicDetail({ topic }: { topic: Topic }) {
       </section>
 
       <div className="detail-grid">
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">LEARNING CHECKLIST</span>
-              <h2>One task at a time.</h2>
+        <div className="detail-main">
+          <section className="panel">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">LEARNING CHECKLIST</span>
+                <h2>One task at a time.</h2>
+              </div>
+              <span className="badge">
+                {ready ? `${done}/${topic.lessons.length}` : "…"}
+              </span>
             </div>
-            <span className="badge">
-              {ready ? `${done}/${topic.lessons.length}` : "…"}
-            </span>
-          </div>
 
-          <p className="checklist-intro">
-            Mark a task complete when you can explain it and demonstrate it.
-          </p>
-
-          <div className="lesson-list">
-            {topic.lessons.map((lesson, index) => {
-              const checked = completed.includes(lesson.id);
-
-              return (
-                <label
-                  key={lesson.id}
-                  className={`lesson ${checked ? "lesson-completed" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={!ready}
-                    onChange={() => toggleLesson(lesson.id)}
-                  />
-                  <span className="lesson-copy">
-                    <span className="lesson-number">
-                      TASK {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <strong>{lesson.title}</strong>
-                    <span>{lesson.description}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-
-          <p className="storage-note">
-            Progress is saved in this browser. It is not synced across devices.
-          </p>
-
-          {storageError && (
-            <p className="error-message" role="alert">
-              Could not save your progress. Check whether browser storage is
-              available.
+            <p className="checklist-intro">
+              Mark a task complete when you can explain it and demonstrate it.
             </p>
-          )}
-        </section>
+
+            <div className="lesson-list">
+              {topic.lessons.map((lesson, index) => {
+                const checked = completed.includes(lesson.id);
+
+                return (
+                  <label
+                    key={lesson.id}
+                    className={`lesson ${checked ? "lesson-completed" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={!ready}
+                      onChange={() => toggleLesson(lesson.id)}
+                    />
+                    <span className="lesson-copy">
+                      <span className="lesson-number">
+                        TASK {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <strong>{lesson.title}</strong>
+                      <span>{lesson.description}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <p className="storage-note">
+              Progress is saved in this browser. It is not synced across
+              devices.
+            </p>
+
+            {storageError && (
+              <p className="error-message" role="alert">
+                Could not save your progress. Check whether browser storage is
+                available.
+              </p>
+            )}
+          </section>
+
+          <TopicNotes key={topic.slug} topicSlug={topic.slug} />
+        </div>
 
         <aside className="detail-aside">
           <section className="panel">
