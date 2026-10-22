@@ -149,7 +149,7 @@ jobs:
       - name: Build and start stack
         run: docker compose --env-file .env.database up -d --build
 
-            - name: Check API and frontend
+      - name: Check API and frontend
         shell: bash
         run: |
           curl --fail --silent --show-error \
