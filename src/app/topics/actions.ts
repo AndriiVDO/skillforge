@@ -175,3 +175,89 @@ export async function addLesson(
   revalidatePath("/", "layout");
   redirect(`/topics/${encodeURIComponent(topicSlug)}`);
 }
+
+export type ResourceFormState = {
+  error: string;
+  values?: {
+    title: string;
+    url: string;
+  };
+};
+
+export async function addResource(
+  topicSlug: string,
+  _previousState: ResourceFormState,
+  formData: FormData,
+): Promise<ResourceFormState> {
+  if (process.env.NODE_ENV !== "development") {
+    return { error: "Editing is available in local development only." };
+  }
+
+  const values = {
+    title: String(formData.get("title") ?? "").trim(),
+    url: String(formData.get("url") ?? "").trim(),
+  };
+
+  function fail(error: string): ResourceFormState {
+    return { error, values };
+  }
+
+  if (values.title.length === 0 || values.title.length > 200) {
+    return fail("Enter a title between 1 and 200 characters.");
+  }
+
+  try {
+    const address = new URL(values.url);
+
+    if (
+      values.url.length > 2048 ||
+      !["http:", "https:"].includes(address.protocol) ||
+      !address.hostname
+    ) {
+      return fail("Enter a valid HTTP or HTTPS URL.");
+    }
+  } catch {
+    return fail(
+      "Enter a valid URL, for example: https://www.postgresql.org/docs/.",
+    );
+  }
+
+  const baseUrl = process.env.SKILLFORGE_API_URL;
+
+  if (!baseUrl) {
+    return fail("The API connection is not configured.");
+  }
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/topics/${encodeURIComponent(topicSlug)}/resources`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+
+    if (response.status === 409) {
+      return fail("The resource list changed. Please try again.");
+    }
+
+    if (response.status === 404) {
+      return fail(
+        "The topic or editing endpoint was not found. Check that the API runs in Development.",
+      );
+    }
+
+    if (!response.ok) {
+      return fail(`Could not add the resource (HTTP ${response.status}).`);
+    }
+  } catch {
+    return fail(
+      "Could not confirm the save. Check the resource list before retrying.",
+    );
+  }
+
+  revalidatePath("/", "layout");
+  redirect(`/topics/${encodeURIComponent(topicSlug)}`);
+}

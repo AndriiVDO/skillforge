@@ -142,4 +142,53 @@ status, _ = request(
 )
 check(status == 404, "A missing topic should return HTTP 404.")
 
-print("PASS: topic creation, editing, validation, and task persistence.")
+# Invalid URL schemes must be rejected.
+status, _ = request(
+    "POST",
+    f"/api/topics/{slug}/resources",
+    {
+        "title": "Invalid resource",
+        "url": "javascript:alert(1)",
+    },
+)
+check(status == 400, "A non-HTTP URL should return HTTP 400.")
+
+# Invalid input must not create a resource.
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the topic.")
+check(topic["resources"] == [], "An invalid resource was saved.")
+
+# Add a valid resource.
+resource_input = {
+    "title": "PostgreSQL Documentation",
+    "url": "https://www.postgresql.org/docs/",
+}
+
+status, resource = request(
+    "POST",
+    f"/api/topics/{slug}/resources",
+    resource_input,
+)
+check(status == 201, "Adding a resource should return HTTP 201.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the resource's topic.")
+check(len(topic["resources"]) == 1, "The resource was not saved.")
+check(
+    topic["resources"][0]["url"] == resource_input["url"],
+    "The saved resource URL is incorrect.",
+)
+check(
+    len(topic["lessons"]) == 2,
+    "Adding a resource changed the topic's tasks.",
+)
+
+# Missing topics must be rejected.
+status, _ = request(
+    "POST",
+    f"/api/topics/missing-{slug}/resources",
+    resource_input,
+)
+check(status == 404, "A missing topic should return HTTP 404.")
+
+print("PASS: topic editing, tasks, resources, and input validation.")
