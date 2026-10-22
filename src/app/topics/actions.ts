@@ -98,3 +98,80 @@ export async function saveTopic(
   revalidatePath("/", "layout");
   redirect(`/topics/${encodeURIComponent(values.slug)}`);
 }
+
+export type LessonFormState = {
+  error: string;
+  values?: {
+    title: string;
+    description: string;
+  };
+};
+
+export async function addLesson(
+  topicSlug: string,
+  _previousState: LessonFormState,
+  formData: FormData,
+): Promise<LessonFormState> {
+  if (process.env.NODE_ENV !== "development") {
+    return { error: "Editing is available in local development only." };
+  }
+
+  const values = {
+    title: String(formData.get("title") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim(),
+  };
+
+  function fail(error: string): LessonFormState {
+    return { error, values };
+  }
+
+  if (
+    values.title.length === 0 ||
+    values.title.length > 200 ||
+    values.description.length === 0 ||
+    values.description.length > 4000
+  ) {
+    return fail(
+      "Enter a title of up to 200 characters and a description of up to 4,000 characters.",
+    );
+  }
+
+  const baseUrl = process.env.SKILLFORGE_API_URL;
+
+  if (!baseUrl) {
+    return fail("The API connection is not configured.");
+  }
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/topics/${encodeURIComponent(topicSlug)}/lessons`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+
+    if (response.status === 409) {
+      return fail("The task list changed. Please try again.");
+    }
+
+    if (response.status === 404) {
+      return fail(
+        "The topic or editing endpoint was not found. Check that the API runs in Development.",
+      );
+    }
+
+    if (!response.ok) {
+      return fail(`Could not add the task (HTTP ${response.status}).`);
+    }
+  } catch {
+    return fail(
+      "Could not confirm the save. Check the task list before retrying.",
+    );
+  }
+
+  revalidatePath("/", "layout");
+  redirect(`/topics/${encodeURIComponent(topicSlug)}`);
+}

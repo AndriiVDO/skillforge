@@ -1,6 +1,6 @@
 "use client";
 import { TopicNotes } from "@/components/topic-notes";
-
+import { LessonForm } from "@/components/lesson-form";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -443,6 +443,12 @@ export function TopicDetail({ topic }: { topic: Topic }) {
               Mark a task complete when you can explain it and demonstrate it.
             </p>
 
+            {topic.lessons.length === 0 && (
+              <p className="notes-description">
+                No tasks yet. Add the first practical step below.
+              </p>
+            )}
+
             <div className="lesson-list">
               {topic.lessons.map((lesson, index) => {
                 const checked = completed.includes(lesson.id);
@@ -483,6 +489,12 @@ export function TopicDetail({ topic }: { topic: Topic }) {
             )}
           </section>
 
+          {process.env.NODE_ENV === "development" && (
+            <LessonForm
+              key={`lesson-form-${topic.slug}`}
+              topicSlug={topic.slug}
+            />
+          )}
           <TopicNotes key={topic.slug} topicSlug={topic.slug} />
         </div>
 
