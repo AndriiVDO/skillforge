@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SkillForge.Api.Data;
 using SkillForge.Api.Models;
+using SkillForge.Api.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +89,11 @@ app.MapGet("/api/topics/{slug}", async (
 
     return Results.Ok(ToResponse(topic));
 });
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapTopicEditing();
+}
 
 app.Run();
 
