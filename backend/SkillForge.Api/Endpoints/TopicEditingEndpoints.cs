@@ -13,6 +13,7 @@ public static class TopicEditingEndpoints
         app.MapPost("/api/topics", CreateAsync);
         app.MapPut("/api/topics/{slug}", UpdateAsync);
         app.MapPost("/api/topics/{slug}/lessons", AddLessonAsync);
+        app.MapPost("/api/topics/{slug}/resources", AddResourceAsync);
     }
 
     private static async Task<IResult> CreateAsync(
@@ -212,6 +213,105 @@ public static class TopicEditingEndpoints
         );
     }
 
+    private static async Task<IResult> AddResourceAsync(
+    string slug,
+    ResourceInput input,
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        var title = input.Title?.Trim();
+        var url = input.Url?.Trim();
+
+        if (string.IsNullOrEmpty(title) || title.Length > 200)
+        {
+            errors["title"] =
+            [
+                "Enter a title between 1 and 200 characters."
+            ];
+        }
+
+        if (
+            string.IsNullOrEmpty(url) ||
+            url.Length > 2048 ||
+            !Uri.TryCreate(url, UriKind.Absolute, out var address) ||
+            (
+                address.Scheme != Uri.UriSchemeHttps &&
+                address.Scheme != Uri.UriSchemeHttp
+            ) ||
+            string.IsNullOrEmpty(address.Host)
+        )
+        {
+            errors["url"] =
+            [
+                "Enter a valid HTTP or HTTPS URL, up to 2048 characters."
+            ];
+        }
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        var topic = await db.Topics
+            .Include(item => item.Resources)
+            .SingleOrDefaultAsync(
+                item => item.Slug == slug,
+                cancellationToken
+            );
+
+        if (topic is null)
+        {
+            return Results.NotFound(new
+            {
+                message = "Topic not found."
+            });
+        }
+
+        var nextPosition = topic.Resources.Count == 0
+            ? 1
+            : topic.Resources.Max(item => item.Position) + 1;
+
+        var resource = new LearningResource
+        {
+            TopicId = topic.Id,
+            Title = title!,
+            Url = url!,
+            Position = nextPosition
+        };
+
+        db.Resources.Add(resource);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException error) when (
+            error.InnerException is PostgresException
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: "IX_resources_TopicId_Position"
+            })
+        {
+            return Results.Conflict(new
+            {
+                message = "The resource list changed. Please retry."
+            });
+        }
+
+        return Results.Created(
+            $"/api/topics/{topic.Slug}",
+            new
+            {
+                resource.Id,
+                resource.Title,
+                resource.Url,
+                resource.Position
+            }
+        );
+    }
+
     private static Dictionary<string, string[]> Validate(TopicInput input)
     {
         var errors = new Dictionary<string, string[]>();
@@ -274,4 +374,9 @@ public sealed record TopicInput(
 public sealed record LessonInput(
     string? Title,
     string? Description
+);
+
+public sealed record ResourceInput(
+    string? Title,
+    string? Url
 );

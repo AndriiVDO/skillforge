@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Topic } from "@/lib/topics";
+import { ResourceForm } from "@/components/resource-form";
 
 const STORAGE_KEY = "skillforge.completed-lessons.v1";
 const PROGRESS_EVENT = "skillforge-progress";
@@ -520,9 +521,9 @@ export function TopicDetail({ topic }: { topic: Topic }) {
             <span className="eyebrow">GO DEEPER</span>
             <h2>Learning resources</h2>
             <div className="resource-list">
-              {topic.resources.map((resource) => (
+              {topic.resources.map((resource, index) => (
                 <a
-                  key={resource.url}
+                  key={`${resource.url}-${index}`}
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -534,6 +535,13 @@ export function TopicDetail({ topic }: { topic: Topic }) {
               ))}
             </div>
           </section>
+
+          {process.env.NODE_ENV === "development" && (
+            <ResourceForm
+              key={`resource-form-${topic.slug}`}
+              topicSlug={topic.slug}
+            />
+          )}
         </aside>
       </div>
     </>
