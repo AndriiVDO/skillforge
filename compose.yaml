@@ -17,5 +17,43 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build:
+      context: ./backend/SkillForge.Api
+      target: migrate
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__SkillForge: "Host=db;Port=5432;Database=skillforge;Username=skillforge;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ./backend/SkillForge.Api
+      target: final
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__SkillForge: "Host=db;Port=5432;Database=skillforge;Username=skillforge;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    ports:
+      - "127.0.0.1:5050:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SKILLFORGE_API_URL: http://api:8080
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+
 volumes:
   postgres_data:
