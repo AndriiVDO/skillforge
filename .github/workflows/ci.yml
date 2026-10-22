@@ -149,18 +149,28 @@ jobs:
       - name: Build and start stack
         run: docker compose --env-file .env.database up -d --build
 
-      - name: Check API and frontend
+            - name: Check API and frontend
         shell: bash
         run: |
           curl --fail --silent --show-error \
-            --retry 20 --retry-connrefused --retry-delay 2 --max-time 10 \
-            http://localhost:5050/api/health/db
+            --retry 30 --retry-all-errors --retry-delay 2 \
+            --retry-max-time 120 --connect-timeout 3 --max-time 10 \
+            --output /tmp/db-health.json \
+            http://127.0.0.1:5050/api/health/db
 
           curl --fail --silent --show-error \
-            http://localhost:5050/api/topics > /tmp/topics.json
+            --retry 30 --retry-all-errors --retry-delay 2 \
+            --retry-max-time 120 --connect-timeout 3 --max-time 10 \
+            --output /tmp/topics.json \
+            http://127.0.0.1:5050/api/topics
 
           python3 - <<'PY'
           import json
+
+          with open("/tmp/db-health.json") as file:
+              health = json.load(file)
+
+          assert health["status"] == "ok", "Database health check failed."
 
           with open("/tmp/topics.json") as file:
               topics = json.load(file)
@@ -173,8 +183,10 @@ jobs:
           PY
 
           curl --fail --silent --show-error \
-            --retry 20 --retry-connrefused --retry-delay 2 --max-time 10 \
-            http://localhost:3000/topics > /tmp/topics.html
+            --retry 30 --retry-all-errors --retry-delay 2 \
+            --retry-max-time 120 --connect-timeout 3 --max-time 20 \
+            --output /tmp/topics.html \
+            http://127.0.0.1:3000/topics
 
           python3 - <<'PY'
           from html.parser import HTMLParser
