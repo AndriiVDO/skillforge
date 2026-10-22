@@ -343,6 +343,14 @@ export function TopicsCatalog({ topics }: { topics: Topic[] }) {
         <p>Choose a topic and start turning ideas into practical skills.</p>
       </section>
 
+      {process.env.NODE_ENV === "development" && (
+        <div className="editor-actions">
+          <Link href="/topics/new" className="button button-primary">
+            Create topic →
+          </Link>
+        </div>
+      )}
+
       <div className="catalog-toolbar">
         <label className="search-field">
           <span className="sr-only">Search topics</span>
@@ -406,6 +414,17 @@ export function TopicDetail({ topic }: { topic: Topic }) {
         <h1>{topic.title}</h1>
         <p>{topic.description}</p>
       </section>
+
+      {process.env.NODE_ENV === "development" && (
+        <div className="editor-actions">
+          <Link
+            href={`/topics/${topic.slug}/edit`}
+            className="button button-secondary"
+          >
+            Edit topic
+          </Link>
+        </div>
+      )}
 
       <div className="detail-grid">
         <div className="detail-main">
