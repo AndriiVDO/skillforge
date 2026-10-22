@@ -132,3 +132,80 @@ jobs:
           if [ -f api-writes.log ]; then
             cat api-writes.log
           fi
+
+  docker:
+    name: Docker — build and smoke check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Create temporary database configuration
+        run: |
+          printf '%s\n' 'POSTGRES_PASSWORD=ci_docker_password' > .env.database
+
+      - name: Build and start stack
+        run: docker compose --env-file .env.database up -d --build
+
+      - name: Check API and frontend
+        shell: bash
+        run: |
+          curl --fail --silent --show-error \
+            --retry 20 --retry-connrefused --retry-delay 2 --max-time 10 \
+            http://localhost:5050/api/health/db
+
+          curl --fail --silent --show-error \
+            http://localhost:5050/api/topics > /tmp/topics.json
+
+          python3 - <<'PY'
+          import json
+
+          with open("/tmp/topics.json") as file:
+              topics = json.load(file)
+
+          assert len(topics) == 5, "Expected five seeded topics."
+          assert sum(len(t["lessons"]) for t in topics) == 16
+          assert sum(len(t["resources"]) for t in topics) == 11
+
+          print("PASS: containerized API returns seeded learning content.")
+          PY
+
+          curl --fail --silent --show-error \
+            --retry 20 --retry-connrefused --retry-delay 2 --max-time 10 \
+            http://localhost:3000/topics > /tmp/topics.html
+
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+
+          class PageParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.links = set()
+
+              def handle_starttag(self, tag, attrs):
+                  if tag == "a":
+                      self.links.update(
+                          value for key, value in attrs
+                          if key == "href"
+                      )
+
+          parser = PageParser()
+
+          with open("/tmp/topics.html") as file:
+              parser.feed(file.read())
+
+          assert "/topics/linux" in parser.links, \
+              "The frontend did not render the API-backed topic catalog."
+
+          print("PASS: containerized frontend renders learning topics.")
+          PY
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose --env-file .env.database logs --no-color --tail=150
+
+      - name: Clean up temporary stack
+        if: always()
+        run: docker compose --env-file .env.database down -v
