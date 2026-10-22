@@ -110,9 +110,25 @@ jobs:
 
           python3 scripts/check_api.py
 
+      - name: Check topic creation and task persistence
+        shell: bash
+        run: |
+          ASPNETCORE_ENVIRONMENT=Development \
+            dotnet backend/SkillForge.Api/bin/Release/net10.0/SkillForge.Api.dll \
+            --urls http://127.0.0.1:5051 > api-writes.log 2>&1 &
+
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+
+          python3 scripts/check_topic_writes.py
+
       - name: Show API logs on failure
         if: failure()
         run: |
           if [ -f api.log ]; then
             cat api.log
+          fi
+
+          if [ -f api-writes.log ]; then
+            cat api-writes.log
           fi
