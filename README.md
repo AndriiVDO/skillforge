@@ -21,6 +21,20 @@ Explore technical topics, track practical tasks, and keep personal notes. Admini
 - Docker Compose stack with automatic database migrations
 - Automated build and integration checks
 
+## Screenshots
+
+### Learning dashboard
+
+![Learning dashboard with progress statistics](docs/screenshots/dashboard.png)
+
+### Topic catalog
+
+![Searchable learning topic catalog](docs/screenshots/topics.png)
+
+### Topic details
+
+![Linux learning checklist and resources](docs/screenshots/topic-detail.png)
+
 ## Architecture
 
 ```mermaid
