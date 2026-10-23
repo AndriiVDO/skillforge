@@ -10,10 +10,17 @@ public static class TopicEditingEndpoints
 {
     public static void MapTopicEditing(this WebApplication app)
     {
-        app.MapPost("/api/topics", CreateAsync);
-        app.MapPut("/api/topics/{slug}", UpdateAsync);
-        app.MapPost("/api/topics/{slug}/lessons", AddLessonAsync);
-        app.MapPost("/api/topics/{slug}/resources", AddResourceAsync);
+        app.MapPost("/api/topics", CreateAsync)
+            .RequireAuthorization("Admin");
+
+        app.MapPut("/api/topics/{slug}", UpdateAsync)
+            .RequireAuthorization("Admin");
+
+        app.MapPost("/api/topics/{slug}/lessons", AddLessonAsync)
+            .RequireAuthorization("Admin");
+
+        app.MapPost("/api/topics/{slug}/resources", AddResourceAsync)
+            .RequireAuthorization("Admin");
     }
 
     private static async Task<IResult> CreateAsync(

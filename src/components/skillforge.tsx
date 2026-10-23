@@ -90,6 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/", label: "Overview" },
     { href: "/topics", label: "Learning topics" },
     { href: "/system", label: "System" },
+    { href: "/admin", label: "Administration" },
   ];
 
   return (
@@ -326,7 +327,13 @@ export function Dashboard({ topics }: { topics: Topic[] }) {
   );
 }
 
-export function TopicsCatalog({ topics }: { topics: Topic[] }) {
+export function TopicsCatalog({
+  topics,
+  isAdmin = false,
+}: {
+  topics: Topic[];
+  isAdmin?: boolean;
+}) {
   const { completed, ready } = useProgress();
   const [query, setQuery] = useState("");
 
@@ -344,7 +351,7 @@ export function TopicsCatalog({ topics }: { topics: Topic[] }) {
         <p>Choose a topic and start turning ideas into practical skills.</p>
       </section>
 
-      {process.env.NODE_ENV === "development" && (
+      {isAdmin && (
         <div className="editor-actions">
           <Link href="/topics/new" className="button button-primary">
             Create topic →
@@ -396,7 +403,13 @@ export function TopicsCatalog({ topics }: { topics: Topic[] }) {
   );
 }
 
-export function TopicDetail({ topic }: { topic: Topic }) {
+export function TopicDetail({
+  topic,
+  isAdmin = false,
+}: {
+  topic: Topic;
+  isAdmin?: boolean;
+}) {
   const { completed, ready, storageError, toggleLesson } = useProgress();
 
   const done = getCompletedCount(topic, completed);
@@ -416,7 +429,7 @@ export function TopicDetail({ topic }: { topic: Topic }) {
         <p>{topic.description}</p>
       </section>
 
-      {process.env.NODE_ENV === "development" && (
+      {isAdmin && (
         <div className="editor-actions">
           <Link
             href={`/topics/${topic.slug}/edit`}
@@ -446,7 +459,9 @@ export function TopicDetail({ topic }: { topic: Topic }) {
 
             {topic.lessons.length === 0 && (
               <p className="notes-description">
-                No tasks yet. Add the first practical step below.
+                {isAdmin
+                  ? "No tasks yet. Add the first practical step below."
+                  : "No tasks have been added yet."}
               </p>
             )}
 
@@ -490,7 +505,7 @@ export function TopicDetail({ topic }: { topic: Topic }) {
             )}
           </section>
 
-          {process.env.NODE_ENV === "development" && (
+          {isAdmin && (
             <LessonForm
               key={`lesson-form-${topic.slug}`}
               topicSlug={topic.slug}
@@ -536,7 +551,7 @@ export function TopicDetail({ topic }: { topic: Topic }) {
             </div>
           </section>
 
-          {process.env.NODE_ENV === "development" && (
+          {isAdmin && (
             <ResourceForm
               key={`resource-form-${topic.slug}`}
               topicSlug={topic.slug}

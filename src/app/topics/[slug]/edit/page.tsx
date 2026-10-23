@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { TopicForm } from "@/components/topic-form";
 import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { getApiTopics } from "@/lib/api-topics";
+import { requireAdminToken } from "@/lib/admin-session";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -20,10 +21,7 @@ export function generateStaticParams() {
 
 async function EditContent({ params }: PageProps) {
   await connection();
-
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
+  await requireAdminToken();
 
   const { slug } = await params;
   const topics = await getApiTopics();
