@@ -4,17 +4,22 @@
 
 A personal learning workspace built with Next.js, ASP.NET Core, and PostgreSQL.
 
-Explore technical topics, complete practical tasks, and keep personal learning notes.
+Explore technical topics, track practical tasks, and keep personal notes. Administrators can create and edit topics, add lessons, and manage learning resources.
 
 ## Features
 
 - Learning dashboard with progress statistics
-- Searchable topic catalog backed by an API
-- Topic pages with task checklists and learning resources
-- Personal notes saved separately for each topic
+- Searchable topic catalog powered by PostgreSQL
+- Topic pages with practical tasks and learning resources
+- Per-topic notes and task progress saved in the browser
+- Administrator sign-in and protected editing
+- Topic creation and editing
+- Forms for adding lessons and resources
 - System page showing API availability
-- Loading states and retry handling
+- Loading states, validation, and retry handling
 - Responsive dark interface
+- Docker Compose stack with automatic database migrations
+- Automated build and integration checks
 
 ## Architecture
 
@@ -23,37 +28,91 @@ flowchart TD
     Browser["Browser"] --> Next["Next.js server"]
     Next --> API["ASP.NET Core API"]
     API --> DB[("PostgreSQL")]
-    Browser --> Storage["localStorage: progress and notes"]
-    Content["Local lesson content"] --> Next
+    Browser --> Storage["Browser storage: progress and notes"]
 ```
 
-The Next.js server fetches topic summaries from the API.
-The API reads these summaries from PostgreSQL through Entity Framework Core.
+The Next.js server loads topics, lessons, and resources from the API.
+Entity Framework Core manages database access and migrations.
 
-Lesson descriptions, checklists, resources, and topic metadata currently
-remain in the frontend dataset.
+Administrator authentication uses ASP.NET Core Identity. The Next.js
+server stores the API access token in an HttpOnly cookie and attaches it
+to protected API requests.
 
-Progress and personal notes are stored in the browser.
+The API enforces the Admin policy on all content-writing endpoints.
+Reading learning content is public.
+
+Progress and personal notes remain in browser storage.
 
 ## Tech stack
 
-| Area        | Technologies                                |
-| ----------- | ------------------------------------------- |
-| Frontend    | Next.js 16, React, TypeScript, Tailwind CSS |
-| Backend     | C#, ASP.NET Core 10, Minimal APIs           |
-| Database    | PostgreSQL 17, EF Core, Npgsql              |
-| Development | Docker Compose, .NET User Secrets           |
-| CI          | GitHub Actions, Python API checks           |
+| Area           | Technologies                                          |
+| -------------- | ----------------------------------------------------- |
+| Frontend       | Next.js 16, React, TypeScript, Tailwind CSS           |
+| Backend        | C#, ASP.NET Core 10, Minimal APIs                     |
+| Authentication | ASP.NET Core Identity, bearer tokens, HttpOnly cookie |
+| Database       | PostgreSQL 17, Entity Framework Core, Npgsql          |
+| Containers     | Docker, Docker Compose                                |
+| Configuration  | Environment variables, .NET User Secrets              |
+| CI             | GitHub Actions, Python integration checks             |
 
-## Requirements
+## Run with Docker
+
+Docker Desktop with Docker Compose is required.
+Run these commands in PowerShell from the repository root.
+
+### 1. Create database configuration
+
+Create `.env.database`:
+
+```dotenv
+POSTGRES_PASSWORD=replace_with_a_strong_local_password
+```
+
+This file contains a local secret and must remain outside version control.
+
+### 2. Build and start the stack
+
+```powershell
+docker compose --env-file .env.database up -d --build
+docker compose --env-file .env.database ps -a
+```
+
+Compose starts PostgreSQL, applies migrations, and starts the API and
+frontend. The migration service exiting with code `0` means it succeeded.
+
+| Service               | Address                             |
+| --------------------- | ----------------------------------- |
+| Frontend              | http://localhost:3000               |
+| Administrator sign-in | http://localhost:3000/login         |
+| API health            | http://localhost:5050/api/health    |
+| Database health       | http://localhost:5050/api/health/db |
+
+The public catalog works without an administrator account.
+See administrator setup below to enable editing.
+
+### 3. Stop the stack
+
+```powershell
+docker compose --env-file .env.database down
+```
+
+The database remains in its named volume. Adding `-v` removes that volume
+and its data.
+
+## Local development
+
+Requirements:
 
 - Node.js 22 and npm
 - .NET 10 SDK
 - Docker Desktop with Docker Compose
 
-The following commands assume PowerShell and the repository root.
+Stop any Docker frontend and API containers before starting local servers
+on the same ports:
 
-## Local setup
+```powershell
+docker compose --env-file .env.database stop frontend api
+```
 
 ### 1. Install dependencies
 
@@ -63,47 +122,45 @@ dotnet tool restore
 dotnet restore backend/SkillForge.Api
 ```
 
-### 2. Configure environment files
-
-Copy the example configuration:
+### 2. Configure the frontend
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
 
-Ensure `.env.local` contains:
+For local HTTP development, ensure `.env.local` contains:
 
 ```dotenv
 SKILLFORGE_API_URL=http://localhost:5050
+AUTH_COOKIE_SECURE=false
 ```
 
-Create `.env.database`:
+`SKILLFORGE_API_URL` is a server-side setting. In Docker, Compose points it
+to the API service inside the container network.
 
-```dotenv
-POSTGRES_PASSWORD=replace_with_your_local_database_password
-```
+### 3. Configure the database connection
 
-Use the same database password in the connection string below.
-
-### 3. Configure the API connection
+Create `.env.database` as described above. Use the same password in the
+API connection string:
 
 ```powershell
-dotnet user-secrets set "ConnectionStrings:SkillForge" "Host=localhost;Port=5433;Database=skillforge;Username=skillforge;Password=replace_with_your_local_database_password" --project backend/SkillForge.Api
+dotnet user-secrets set "ConnectionStrings:SkillForge" "Host=localhost;Port=5433;Database=skillforge;Username=skillforge;Password=replace_with_a_strong_local_password" --project backend/SkillForge.Api
 ```
+
+User Secrets stores development configuration outside the repository.
 
 ### 4. Start PostgreSQL and apply migrations
 
 ```powershell
-docker compose --env-file .env.database up -d --wait
+docker compose --env-file .env.database up -d --wait db
 $env:ASPNETCORE_ENVIRONMENT = "Development"
 dotnet ef database update --project backend/SkillForge.Api
 ```
 
-### 5. Start the backend
-
-In the same terminal:
+### 5. Start the API
 
 ```powershell
+$env:ASPNETCORE_ENVIRONMENT = "Development"
 dotnet run --project backend/SkillForge.Api --no-launch-profile --urls http://localhost:5050
 ```
 
@@ -115,21 +172,65 @@ In another terminal:
 npm run dev
 ```
 
-Open the frontend URL printed in the terminal, normally
-http://localhost:3000.
+Open http://localhost:3000.
+
+## Administrator setup
+
+There is no public registration endpoint. An administrator is created
+explicitly using the provisioning command.
+
+With the .NET SDK installed and the database running, configure
+`ConnectionStrings:SkillForge` through User Secrets as described above.
+
+Set the administrator email:
+
+```powershell
+dotnet user-secrets set "BootstrapAdmin:Email" "admin@example.com" --project backend/SkillForge.Api
+```
+
+Choose your own email and password. The email is an account identifier;
+this step does not create an email mailbox.
+
+The password must contain at least 12 characters, including uppercase
+and lowercase letters, a digit, and a symbol.
+
+Enter the password without placing it directly in command history:
+
+```powershell
+$adminPassword = Read-Host "Administrator password" -AsSecureString
+try {
+    $env:BootstrapAdmin__Password = [System.Net.NetworkCredential]::new("", $adminPassword).Password
+    $env:ASPNETCORE_ENVIRONMENT = "Development"
+
+    dotnet run --project backend/SkillForge.Api --no-launch-profile -- --CreateAdmin=true
+}
+finally {
+    Remove-Item Env:BootstrapAdmin__Password -ErrorAction SilentlyContinue
+    Remove-Variable adminPassword -ErrorAction SilentlyContinue
+}
+```
+
+After successful provisioning, open `/login` and sign in.
+
+An administrator created against the same PostgreSQL database is also
+available when the application runs in Docker.
 
 ## API endpoints
 
-| Method | Endpoint             | Purpose                                  |
-| ------ | -------------------- | ---------------------------------------- |
-| GET    | `/api/health`        | API availability and runtime information |
-| GET    | `/api/health/db`     | PostgreSQL connectivity                  |
-| GET    | `/api/topics`        | Topic summaries                          |
-| GET    | `/api/topics/{slug}` | One topic summary; 404 if absent         |
+| Method | Endpoint                       | Access               | Purpose                           |
+| ------ | ------------------------------ | -------------------- | --------------------------------- |
+| GET    | `/api/health`                  | Public               | API availability and runtime      |
+| GET    | `/api/health/db`               | Public               | Database connectivity             |
+| GET    | `/api/topics`                  | Public               | Topics with lessons and resources |
+| GET    | `/api/topics/{slug}`           | Public               | One topic, or HTTP 404            |
+| POST   | `/api/auth/login`              | Public, rate limited | Administrator sign-in             |
+| GET    | `/api/auth/me`                 | Admin                | Current administrator identity    |
+| POST   | `/api/topics`                  | Admin                | Create a topic                    |
+| PUT    | `/api/topics/{slug}`           | Admin                | Update a topic                    |
+| POST   | `/api/topics/{slug}/lessons`   | Admin                | Add a lesson                      |
+| POST   | `/api/topics/{slug}/resources` | Admin                | Add a resource                    |
 
 ## Checks
-
-Stop the development servers before building if files are locked.
 
 ```powershell
 npx eslint .
@@ -138,59 +239,67 @@ dotnet build backend/SkillForge.Api
 dotnet list backend/SkillForge.Api package --vulnerable --include-transitive
 ```
 
-GitHub Actions runs three jobs:
+GitHub Actions runs four jobs:
 
 1. Frontend lint and production build.
 2. Backend Release build.
-3. API integration checks against a fresh PostgreSQL database.
+3. PostgreSQL integration checks, including administrator provisioning,
+   anonymous write rejection, and authenticated content writes.
+4. Docker stack build and API/frontend smoke checks.
 
-The integration job applies migrations and checks database connectivity,
-seeded topics, topic details, and the response for an unknown topic.
+Integration checks use a fresh database and verify seeded content,
+topic details, validation, persistence, and HTTP 404 responses.
 
 ## Project structure
 
-```text
-.github/workflows/       CI configuration
-backend/SkillForge.Api/  ASP.NET Core API, models, and migrations
-scripts/                API integration check
-src/app/                Next.js pages and routing
-src/components/         Interface and interactive components
-src/lib/                Topic content and API data loading
-compose.yaml            Local PostgreSQL service
-```
+| Path                      | Purpose                                               |
+| ------------------------- | ----------------------------------------------------- |
+| `.github/workflows/`      | Continuous integration                                |
+| `backend/SkillForge.Api/` | API, authentication, models, and migrations           |
+| `scripts/`                | API integration checks                                |
+| `src/app/`                | Pages, routing, and Server Actions                    |
+| `src/components/`         | Interface and interactive components                  |
+| `src/lib/`                | API loading, types, and administrator session helpers |
+| `Dockerfile`              | Frontend container build                              |
+| `compose.yaml`            | Database, migration, API, and frontend services       |
+| `.env.example`            | Example frontend configuration                        |
 
-## Data persistence
+## Data and session behavior
 
-PostgreSQL data is stored in a named Docker volume.
-Stopping or recreating the container preserves that volume.
+- PostgreSQL stores topics, lessons, resources, and administrator accounts.
+- Docker stores database data in a named volume.
+- Progress and notes belong to the browser and origin. They do not sync
+  across devices.
+- Clearing browser storage removes local progress and notes.
+- Administrator access tokens expire after 30 minutes.
+- Signing out removes the browser session cookie.
+- API container recreation can invalidate existing sessions because
+  Data Protection keys are not yet persisted.
 
-Browser progress and notes are specific to the browser and origin.
-Clearing browser storage removes them.
+## Deployment notes
 
-## Current limitations
+The supplied Compose configuration is intended for local HTTP use and
+sets `AUTH_COOKIE_SECURE=false`.
 
-- Accounts and authentication are not implemented.
-- Progress and notes do not sync across devices.
-- Lesson content is still maintained in frontend source code.
-- New database topics require matching local lesson content.
-- The API currently supports reading topic summaries only.
-- The System page reports API availability; database health has a separate endpoint.
+For an HTTPS deployment, set `AUTH_COOKIE_SECURE=true`, configure secret
+delivery, and persist ASP.NET Core Data Protection keys.
 
 ## Roadmap
 
-- [x] Build the learning dashboard and topic pages
-- [x] Add browser-based progress and notes
-- [x] Create an ASP.NET Core API
-- [x] Store topic summaries in PostgreSQL
-- [x] Connect the frontend catalog to the API
-- [x] Add CI with PostgreSQL integration checks
-- [ ] Move lesson content and resources into PostgreSQL
-- [ ] Add topic creation and editing
-- [ ] Add authentication and user-specific data
-- [ ] Containerize the frontend and backend
+- [x] Learning dashboard and topic pages
+- [x] Browser-based progress and notes
+- [x] ASP.NET Core API and PostgreSQL persistence
+- [x] Database-backed lessons and resources
+- [x] Topic creation and editing
+- [x] Administrator authentication and protected writes
+- [x] Containerized frontend and backend
+- [x] CI with database integration and Docker smoke checks
+- [ ] Persist Data Protection keys across container recreation
+- [ ] Synchronize user progress and notes across devices
+- [ ] Add lesson and resource editing and deletion
 - [ ] Publish a live demo
 
 ## Learning focus
 
-This project explores frontend development, HTTP APIs, relational data,
-database migrations, Docker, and continuous integration through practical work.
+Built to practise frontend development, C#, HTTP APIs, relational data,
+authentication, database migrations, containers, and continuous integration.
