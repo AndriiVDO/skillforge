@@ -32,6 +32,10 @@ ENV ASPNETCORE_HTTP_PORTS=8080
 
 COPY --from=build /out/publish ./
 
+RUN mkdir -p /app/keys \
+    && chown "$APP_UID" /app/keys \
+    && chmod 700 /app/keys
+
 USER $APP_UID
 
 EXPOSE 8080
