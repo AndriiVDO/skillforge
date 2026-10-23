@@ -37,8 +37,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__SkillForge: "Host=db;Port=5432;Database=skillforge;Username=skillforge;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+      DataProtection__KeysPath: /app/keys
     ports:
       - "127.0.0.1:5050:8080"
+    volumes:
+      - api_keys:/app/keys
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -58,3 +61,4 @@ services:
 
 volumes:
   postgres_data:
+  api_keys:

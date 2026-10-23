@@ -4,8 +4,24 @@ using SkillForge.Api.Models;
 using SkillForge.Api.Endpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var dataProtection = builder.Services
+    .AddDataProtection()
+    .SetApplicationName("SkillForge.Api");
+
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+
+if (!string.IsNullOrWhiteSpace(keysPath))
+{
+    Directory.CreateDirectory(keysPath);
+
+    dataProtection.PersistKeysToFileSystem(
+        new DirectoryInfo(keysPath)
+    );
+}
 
 var connectionString = builder.Configuration
     .GetConnectionString("SkillForge")

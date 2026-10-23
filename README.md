@@ -287,8 +287,8 @@ topic details, validation, persistence, and HTTP 404 responses.
 - Clearing browser storage removes local progress and notes.
 - Administrator access tokens expire after 30 minutes.
 - Signing out removes the browser session cookie.
-- API container recreation can invalidate existing sessions because
-  Data Protection keys are not yet persisted.
+- Docker persists API Data Protection keys in the `api_keys` volume,
+  allowing unexpired administrator sessions to survive API container recreation.
 
 ## Deployment notes
 
@@ -296,7 +296,7 @@ The supplied Compose configuration is intended for local HTTP use and
 sets `AUTH_COOKIE_SECURE=false`.
 
 For an HTTPS deployment, set `AUTH_COOKIE_SECURE=true`, configure secret
-delivery, and persist ASP.NET Core Data Protection keys.
+delivery, and protect persisted Data Protection keys at rest.
 
 ## Roadmap
 
@@ -308,7 +308,7 @@ delivery, and persist ASP.NET Core Data Protection keys.
 - [x] Administrator authentication and protected writes
 - [x] Containerized frontend and backend
 - [x] CI with database integration and Docker smoke checks
-- [ ] Persist Data Protection keys across container recreation
+- [x] Persist Data Protection keys across container recreation
 - [ ] Synchronize user progress and notes across devices
 - [ ] Add lesson and resource editing and deletion
 - [ ] Publish a live demo
