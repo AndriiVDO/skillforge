@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SkillForge.Api.Data;
 using SkillForge.Api.Models;
 using SkillForge.Api.Endpoints;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +17,72 @@ builder.Services.AddDbContext<SkillForgeDbContext>(options =>
     options.UseNpgsql(connectionString)
 );
 
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+
+        options.Password.RequiredLength = 12;
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+
+        options.Lockout.AllowedForNewUsers = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan =
+            TimeSpan.FromMinutes(10);
+    })
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<SkillForgeDbContext>()
+    .AddSignInManager();
+
+builder.Services
+    .AddAuthentication(IdentityConstants.BearerScheme)
+    .AddBearerToken(IdentityConstants.BearerScheme, options =>
+    {
+        options.BearerTokenExpiration = TimeSpan.FromMinutes(30);
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireRole("Admin");
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
+
+    options.AddFixedWindowLimiter("admin-login", limiter =>
+    {
+        limiter.PermitLimit = 20;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+});
+
 var app = builder.Build();
+
+if (builder.Configuration.GetValue<bool>("CreateAdmin"))
+{
+    await AdminProvisioner.CreateAsync(
+        app.Services,
+        app.Configuration
+    );
+
+    return;
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+
+app.MapAdminAuth();
 
 app.MapGet("/api/health", () =>
 {
@@ -90,10 +157,7 @@ app.MapGet("/api/topics/{slug}", async (
     return Results.Ok(ToResponse(topic));
 });
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapTopicEditing();
-}
+app.MapTopicEditing();
 
 app.Run();
 

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { TopicsCatalog } from "@/components/skillforge";
 import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { getApiTopics } from "@/lib/api-topics";
+import { getAdmin } from "@/lib/admin-session";
 
 export const metadata: Metadata = {
   title: "Learning topics",
@@ -12,13 +13,13 @@ export const metadata: Metadata = {
 async function CatalogContent() {
   await connection();
 
-  const topics = await getApiTopics();
+  const [topics, admin] = await Promise.all([getApiTopics(), getAdmin()]);
 
   if (topics === null) {
     return <CatalogUnavailable />;
   }
 
-  return <TopicsCatalog topics={topics} />;
+  return <TopicsCatalog topics={topics} isAdmin={admin !== null} />;
 }
 
 export default function TopicsPage() {

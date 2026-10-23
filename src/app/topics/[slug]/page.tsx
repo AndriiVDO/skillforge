@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { TopicDetail } from "@/components/skillforge";
 import { CatalogUnavailable } from "@/components/catalog-unavailable";
 import { getApiTopics } from "@/lib/api-topics";
+import { getAdmin } from "@/lib/admin-session";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -24,7 +25,8 @@ async function TopicContent({ params }: PageProps) {
   await connection();
 
   const { slug } = await params;
-  const topics = await getApiTopics();
+
+  const [topics, admin] = await Promise.all([getApiTopics(), getAdmin()]);
 
   if (topics === null) {
     return <CatalogUnavailable />;
@@ -36,7 +38,7 @@ async function TopicContent({ params }: PageProps) {
     notFound();
   }
 
-  return <TopicDetail topic={topic} />;
+  return <TopicDetail topic={topic} isAdmin={admin !== null} />;
 }
 
 export default function TopicPage({ params }: PageProps) {

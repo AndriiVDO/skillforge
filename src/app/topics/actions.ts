@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminToken } from "@/lib/admin-session";
 
 export type TopicFormValues = {
   slug: string;
@@ -21,9 +22,7 @@ export async function saveTopic(
   _previousState: TopicFormState,
   formData: FormData,
 ): Promise<TopicFormState> {
-  if (process.env.NODE_ENV !== "development") {
-    return { error: "Editing is available in local development only." };
-  }
+  const adminToken = await requireAdminToken();
 
   const values: TopicFormValues = {
     slug: existingSlug ?? String(formData.get("slug") ?? "").trim(),
@@ -71,10 +70,17 @@ export async function saveTopic(
 
     const response = await fetch(`${baseUrl}${endpoint}`, {
       method: existingSlug ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${adminToken}`,
+      },
       body: JSON.stringify(values),
       signal: AbortSignal.timeout(5000),
     });
+
+    if (response.status === 401 || response.status === 403) {
+      return fail("Your session is no longer valid. Sign in again.");
+    }
 
     if (response.status === 409) {
       return fail("A topic with this slug already exists.");
@@ -112,9 +118,7 @@ export async function addLesson(
   _previousState: LessonFormState,
   formData: FormData,
 ): Promise<LessonFormState> {
-  if (process.env.NODE_ENV !== "development") {
-    return { error: "Editing is available in local development only." };
-  }
+  const adminToken = await requireAdminToken();
 
   const values = {
     title: String(formData.get("title") ?? "").trim(),
@@ -147,11 +151,18 @@ export async function addLesson(
       `${baseUrl}/api/topics/${encodeURIComponent(topicSlug)}/lessons`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
         body: JSON.stringify(values),
         signal: AbortSignal.timeout(5000),
       },
     );
+
+    if (response.status === 401 || response.status === 403) {
+      return fail("Your session is no longer valid. Sign in again.");
+    }
 
     if (response.status === 409) {
       return fail("The task list changed. Please try again.");
@@ -189,9 +200,7 @@ export async function addResource(
   _previousState: ResourceFormState,
   formData: FormData,
 ): Promise<ResourceFormState> {
-  if (process.env.NODE_ENV !== "development") {
-    return { error: "Editing is available in local development only." };
-  }
+  const adminToken = await requireAdminToken();
 
   const values = {
     title: String(formData.get("title") ?? "").trim(),
@@ -233,11 +242,18 @@ export async function addResource(
       `${baseUrl}/api/topics/${encodeURIComponent(topicSlug)}/resources`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
         body: JSON.stringify(values),
         signal: AbortSignal.timeout(5000),
       },
     );
+
+    if (response.status === 401 || response.status === 403) {
+      return fail("Your session is no longer valid. Sign in again.");
+    }
 
     if (response.status === 409) {
       return fail("The resource list changed. Please try again.");

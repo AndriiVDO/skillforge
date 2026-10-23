@@ -15,7 +15,7 @@ RUN dotnet publish \
 RUN dotnet tool install \
     --tool-path /tools \
     dotnet-ef \
-    --version 10.0.0
+    --version 10.0.13
 
 RUN ASPNETCORE_ENVIRONMENT=Production \
     ConnectionStrings__SkillForge="Host=localhost;Database=build_only;Username=build_only;Password=unused" \

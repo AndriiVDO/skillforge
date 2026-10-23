@@ -76,6 +76,8 @@ jobs:
     env:
       ASPNETCORE_ENVIRONMENT: Testing
       ConnectionStrings__SkillForge: "Host=localhost;Port=5432;Database=skillforge_test;Username=skillforge;Password=ci_test_password"
+      BootstrapAdmin__Email: ci-admin@example.test
+      BootstrapAdmin__Password: "CI-Admin-Password-2026!"
 
     steps:
       - name: Check out repository
@@ -94,6 +96,9 @@ jobs:
 
       - name: Apply database migrations
         run: dotnet ef database update --project backend/SkillForge.Api --configuration Release --no-build
+
+      - name: Create test administrator
+        run: dotnet backend/SkillForge.Api/bin/Release/net10.0/SkillForge.Api.dll --CreateAdmin=true
 
       - name: Check API against PostgreSQL
         shell: bash

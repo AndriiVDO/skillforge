@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using SkillForge.Api.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace SkillForge.Api.Data;
 
 public sealed class SkillForgeDbContext(
     DbContextOptions<SkillForgeDbContext> options
-) : DbContext(options)
+) : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<LearningTopic> Topics => Set<LearningTopic>();
     public DbSet<LearningLesson> Lessons => Set<LearningLesson>();
@@ -13,6 +14,8 @@ public sealed class SkillForgeDbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         var topic = modelBuilder.Entity<LearningTopic>();
 
         topic.ToTable("topics");

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { TopicForm } from "@/components/topic-form";
+import { requireAdminToken } from "@/lib/admin-session";
 
 export const metadata: Metadata = {
   title: "Create topic",
 };
 
-export default function NewTopicPage() {
-  if (process.env.NODE_ENV !== "development") {
-    notFound();
-  }
+async function NewTopicContent() {
+  await connection();
+  await requireAdminToken();
 
   return (
     <>
@@ -21,5 +22,19 @@ export default function NewTopicPage() {
 
       <TopicForm />
     </>
+  );
+}
+
+export default function NewTopicPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="panel" role="status">
+          <h2>Loading editor…</h2>
+        </section>
+      }
+    >
+      <NewTopicContent />
+    </Suspense>
   );
 }
