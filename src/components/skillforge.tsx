@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Topic } from "@/lib/topics";
 import { ResourceForm } from "@/components/resource-form";
+import { LearningContentManager } from "@/components/learning-content-manager";
 
 const STORAGE_KEY = "skillforge.completed-lessons.v1";
 const PROGRESS_EVENT = "skillforge-progress";
@@ -512,6 +513,13 @@ export function TopicDetail({
             />
           )}
           <TopicNotes key={topic.slug} topicSlug={topic.slug} />
+
+          {isAdmin && (
+            <LearningContentManager
+              key={`manager-${topic.slug}`}
+              topic={topic}
+            />
+          )}
         </div>
 
         <aside className="detail-aside">
@@ -536,9 +544,9 @@ export function TopicDetail({
             <span className="eyebrow">GO DEEPER</span>
             <h2>Learning resources</h2>
             <div className="resource-list">
-              {topic.resources.map((resource, index) => (
+              {topic.resources.map((resource) => (
                 <a
-                  key={`${resource.url}-${index}`}
+                  key={resource.id}
                   href={resource.url}
                   target="_blank"
                   rel="noopener noreferrer"

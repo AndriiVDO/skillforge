@@ -174,6 +174,7 @@ app.MapGet("/api/topics/{slug}", async (
 });
 
 app.MapTopicEditing();
+app.MapLearningContentEditing();
 
 app.Run();
 
@@ -197,6 +198,7 @@ static TopicResponse ToResponse(LearningTopic topic)
         topic.Resources
             .OrderBy(resource => resource.Position)
             .Select(resource => new ResourceResponse(
+                resource.Id,
                 resource.Title,
                 resource.Url
             ))
@@ -222,6 +224,7 @@ public sealed record LessonResponse(
 );
 
 public sealed record ResourceResponse(
+    int Id,
     string Title,
     string Url
 );

@@ -5,6 +5,7 @@ export type Lesson = {
 };
 
 export type LearningResource = {
+  id: number;
   title: string;
   url: string;
 };

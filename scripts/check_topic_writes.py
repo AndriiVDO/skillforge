@@ -26,7 +26,8 @@ def request(method, path, data=None):
 
     try:
         with urlopen(http_request, timeout=5) as response:
-            return response.status, json.load(response)
+            raw = response.read().decode("utf-8")
+            return response.status, json.loads(raw) if raw.strip() else None
     except HTTPError as error:
         return error.code, error.read().decode("utf-8")
 
@@ -74,6 +75,18 @@ anonymous_requests = [
         "/api/topics/linux/resources",
         {"title": "Blocked resource", "url": "https://example.com/"},
     ),
+        (
+        "PUT",
+        "/api/topics/linux/lessons/linux-files",
+        {"title": "Blocked edit", "description": "Must not be saved."},
+    ),
+    ("DELETE", "/api/topics/linux/lessons/linux-files", None),
+    (
+        "PUT",
+        "/api/topics/linux/resources/1",
+        {"title": "Blocked edit", "url": "https://example.com/"},
+    ),
+    ("DELETE", "/api/topics/linux/resources/1", None),
 ]
 
 for method, path, payload in anonymous_requests:
@@ -252,4 +265,146 @@ status, _ = request(
 )
 check(status == 404, "A missing topic should return HTTP 404.")
 
-print("PASS: topic editing, tasks, resources, and input validation.")
+# Resource IDs must be included in the public API response.
+resource_id = resource["id"]
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the topic before editing.")
+check(
+    topic["resources"][0]["id"] == resource_id,
+    "The resource ID is missing or incorrect.",
+)
+
+lesson_path = f"/api/topics/{slug}/lessons/{lesson_ids[0]}"
+resource_path = f"/api/topics/{slug}/resources/{resource_id}"
+
+lesson_update = {
+    "title": "Updated first task",
+    "description": "Updated task description.",
+}
+resource_update = {
+    "title": "Updated documentation",
+    "url": "https://www.postgresql.org/docs/current/",
+}
+
+# Invalid edits must be rejected.
+status, _ = request("PUT", lesson_path, {**lesson_update, "title": ""})
+check(status == 400, "An invalid task edit should return HTTP 400.")
+
+status, _ = request(
+    "PUT",
+    resource_path,
+    {**resource_update, "url": "javascript:alert(1)"},
+)
+check(status == 400, "An invalid resource edit should return HTTP 400.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not check rejected edits.")
+check(
+    topic["lessons"][0]["title"] == "First task",
+    "A rejected task edit changed saved data.",
+)
+check(
+    topic["resources"][0]["url"] == resource_input["url"],
+    "A rejected resource edit changed saved data.",
+)
+
+# Another existing topic must not be able to address these items.
+for collection, item_id, payload in [
+    ("lessons", lesson_ids[0], lesson_update),
+    ("resources", resource_id, resource_update),
+]:
+    wrong_topic_path = f"/api/topics/linux/{collection}/{item_id}"
+
+    status, _ = request("PUT", wrong_topic_path, payload)
+    check(status == 404, "Editing through the wrong topic must return 404.")
+
+    status, _ = request("DELETE", wrong_topic_path)
+    check(status == 404, "Deleting through the wrong topic must return 404.")
+
+# Valid edits preserve IDs and ordering.
+status, _ = request("PUT", lesson_path, lesson_update)
+check(status == 204, "Editing a task should return HTTP 204.")
+
+status, _ = request("PUT", resource_path, resource_update)
+check(status == 204, "Editing a resource should return HTTP 204.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve edited content.")
+check(
+    [lesson["id"] for lesson in topic["lessons"]] == lesson_ids,
+    "Editing changed task IDs or their order.",
+)
+check(
+    topic["lessons"][0]["title"] == lesson_update["title"]
+    and topic["lessons"][0]["description"] == lesson_update["description"],
+    "The task edit was not saved.",
+)
+check(
+    topic["resources"][0] == {"id": resource_id, **resource_update},
+    "The resource edit was not saved correctly.",
+)
+check(topic["taskCount"] == 2, "Editing changed the task count.")
+
+# Deletion removes only the selected item.
+status, _ = request("DELETE", lesson_path)
+check(status == 204, "Deleting a task should return HTTP 204.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the topic after deletion.")
+check(
+    [lesson["id"] for lesson in topic["lessons"]] == [lesson_ids[1]],
+    "Deleting a task removed the wrong item.",
+)
+check(topic["taskCount"] == 1, "Task count was not updated.")
+check(len(topic["resources"]) == 1, "Deleting a task removed a resource.")
+
+status, _ = request("DELETE", lesson_path)
+check(status == 404, "Deleting a missing task should return HTTP 404.")
+
+status, _ = request("PUT", lesson_path, lesson_update)
+check(status == 404, "Editing a missing task should return HTTP 404.")
+
+status, _ = request("DELETE", resource_path)
+check(status == 204, "Deleting a resource should return HTTP 204.")
+
+status, _ = request("DELETE", resource_path)
+check(status == 404, "Deleting a missing resource should return HTTP 404.")
+
+status, _ = request("PUT", resource_path, resource_update)
+check(status == 404, "Editing a missing resource should return HTTP 404.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not verify resource deletion.")
+check(topic["resources"] == [], "The deleted resource is still present.")
+check(topic["taskCount"] == 1, "Resource deletion changed the task count.")
+
+# Adding after deletion must work with gaps in the stored positions.
+status, new_lesson = request(
+    "POST",
+    f"/api/topics/{slug}/lessons",
+    {"title": "New task", "description": "Added after deletion."},
+)
+check(status == 201, "Adding a task after deletion failed.")
+
+status, new_resource = request(
+    "POST",
+    f"/api/topics/{slug}/resources",
+    resource_input,
+)
+check(status == 201, "Adding a resource after deletion failed.")
+
+status, topic = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the final topic.")
+check(
+    [lesson["id"] for lesson in topic["lessons"]]
+    == [lesson_ids[1], new_lesson["id"]],
+    "Task order is incorrect after deletion and insertion.",
+)
+check(topic["taskCount"] == 2, "Final task count is incorrect.")
+check(
+    [item["id"] for item in topic["resources"]] == [new_resource["id"]],
+    "The replacement resource was not saved.",
+)
+
+print("PASS: authorized content creation, editing, deletion, and validation.")
