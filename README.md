@@ -20,6 +20,8 @@ Explore technical topics, track practical tasks, and keep personal notes. Admini
 - Responsive dark interface
 - Docker Compose stack with automatic database migrations
 - Automated build and integration checks
+- Administrator forms for editing lessons and resources
+- Explicit confirmation before deleting learning content
 
 ## Screenshots
 
@@ -231,18 +233,22 @@ available when the application runs in Docker.
 
 ## API endpoints
 
-| Method | Endpoint                       | Access               | Purpose                           |
-| ------ | ------------------------------ | -------------------- | --------------------------------- |
-| GET    | `/api/health`                  | Public               | API availability and runtime      |
-| GET    | `/api/health/db`               | Public               | Database connectivity             |
-| GET    | `/api/topics`                  | Public               | Topics with lessons and resources |
-| GET    | `/api/topics/{slug}`           | Public               | One topic, or HTTP 404            |
-| POST   | `/api/auth/login`              | Public, rate limited | Administrator sign-in             |
-| GET    | `/api/auth/me`                 | Admin                | Current administrator identity    |
-| POST   | `/api/topics`                  | Admin                | Create a topic                    |
-| PUT    | `/api/topics/{slug}`           | Admin                | Update a topic                    |
-| POST   | `/api/topics/{slug}/lessons`   | Admin                | Add a lesson                      |
-| POST   | `/api/topics/{slug}/resources` | Admin                | Add a resource                    |
+| Method | Endpoint                                    | Access               | Purpose                           |
+| ------ | ------------------------------------------- | -------------------- | --------------------------------- |
+| GET    | `/api/health`                               | Public               | API availability and runtime      |
+| GET    | `/api/health/db`                            | Public               | Database connectivity             |
+| GET    | `/api/topics`                               | Public               | Topics with lessons and resources |
+| GET    | `/api/topics/{slug}`                        | Public               | One topic, or HTTP 404            |
+| POST   | `/api/auth/login`                           | Public, rate limited | Administrator sign-in             |
+| GET    | `/api/auth/me`                              | Admin                | Current administrator identity    |
+| POST   | `/api/topics`                               | Admin                | Create a topic                    |
+| PUT    | `/api/topics/{slug}`                        | Admin                | Update a topic                    |
+| POST   | `/api/topics/{slug}/lessons`                | Admin                | Add a lesson                      |
+| POST   | `/api/topics/{slug}/resources`              | Admin                | Add a resource                    |
+| PUT    | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Edit a lesson                     |
+| DELETE | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Delete a lesson                   |
+| PUT    | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Edit a resource                   |
+| DELETE | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Delete a resource                 |
 
 ## Checks
 
@@ -310,7 +316,7 @@ delivery, and protect persisted Data Protection keys at rest.
 - [x] CI with database integration and Docker smoke checks
 - [x] Persist Data Protection keys across container recreation
 - [ ] Synchronize user progress and notes across devices
-- [ ] Add lesson and resource editing and deletion
+- [x] Add lesson and resource editing and deletion
 - [ ] Publish a live demo
 
 ## Learning focus
