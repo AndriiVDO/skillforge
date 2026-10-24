@@ -21,6 +21,8 @@ public static class TopicEditingEndpoints
 
         app.MapPost("/api/topics/{slug}/resources", AddResourceAsync)
             .RequireAuthorization("Admin");
+        app.MapDelete("/api/topics/{slug}", DeleteAsync)
+            .RequireAuthorization("Admin");
     }
 
     private static async Task<IResult> CreateAsync(
@@ -317,6 +319,20 @@ public static class TopicEditingEndpoints
                 resource.Position
             }
         );
+    }
+
+    private static async Task<IResult> DeleteAsync(
+    string slug,
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken)
+    {
+        var deleted = await db.Topics
+            .Where(topic => topic.Slug == slug)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        return deleted == 0
+            ? Results.NotFound(new { message = "Topic not found." })
+            : Results.NoContent();
     }
 
     private static Dictionary<string, string[]> Validate(TopicInput input)

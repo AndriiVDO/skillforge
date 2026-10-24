@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { Topic } from "@/lib/topics";
 import { ResourceForm } from "@/components/resource-form";
 import { LearningContentManager } from "@/components/learning-content-manager";
+import { DeleteTopicForm } from "@/components/delete-topic-form";
 
 const STORAGE_KEY = "skillforge.completed-lessons.v1";
 const PROGRESS_EVENT = "skillforge-progress";
@@ -515,10 +516,18 @@ export function TopicDetail({
           <TopicNotes key={topic.slug} topicSlug={topic.slug} />
 
           {isAdmin && (
-            <LearningContentManager
-              key={`manager-${topic.slug}`}
-              topic={topic}
-            />
+            <>
+              <LearningContentManager
+                key={`manager-${topic.slug}`}
+                topic={topic}
+              />
+
+              <DeleteTopicForm
+                key={`delete-topic-${topic.slug}`}
+                slug={topic.slug}
+                title={topic.title}
+              />
+            </>
           )}
         </div>
 
