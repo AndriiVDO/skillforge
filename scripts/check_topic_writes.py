@@ -87,6 +87,7 @@ anonymous_requests = [
         {"title": "Blocked edit", "url": "https://example.com/"},
     ),
     ("DELETE", "/api/topics/linux/resources/1", None),
+    ("DELETE", "/api/topics/linux", None),
 ]
 
 for method, path, payload in anonymous_requests:
@@ -406,5 +407,35 @@ check(
     [item["id"] for item in topic["resources"]] == [new_resource["id"]],
     "The replacement resource was not saved.",
 )
+
+# Delete the temporary topic after testing its lessons and resources.
+status, _ = request("DELETE", f"/api/topics/{slug}")
+check(status == 204, "Deleting a topic should return HTTP 204.")
+
+status, _ = request("GET", f"/api/topics/{slug}")
+check(status == 404, "The deleted topic is still accessible.")
+
+status, catalog = request("GET", "/api/topics")
+check(status == 200, "Could not retrieve the catalog after deletion.")
+check(
+    all(item["slug"] != slug for item in catalog),
+    "The deleted topic is still present in the catalog.",
+)
+
+status, _ = request("DELETE", f"/api/topics/{slug}")
+check(status == 404, "Deleting a missing topic should return HTTP 404.")
+
+# Reusing the slug must create a fresh topic without old content.
+status, _ = request("POST", "/api/topics", topic_input)
+check(status == 201, "Could not recreate the deleted topic.")
+
+status, recreated = request("GET", f"/api/topics/{slug}")
+check(status == 200, "Could not retrieve the recreated topic.")
+check(recreated["lessons"] == [], "The recreated topic has old tasks.")
+check(recreated["resources"] == [], "The recreated topic has old resources.")
+check(recreated["taskCount"] == 0, "The recreated topic has a stale task count.")
+
+status, _ = request("DELETE", f"/api/topics/{slug}")
+check(status == 204, "Could not clean up the recreated topic.")
 
 print("PASS: authorized content creation, editing, deletion, and validation.")

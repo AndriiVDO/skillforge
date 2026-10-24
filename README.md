@@ -233,22 +233,23 @@ available when the application runs in Docker.
 
 ## API endpoints
 
-| Method | Endpoint                                    | Access               | Purpose                           |
-| ------ | ------------------------------------------- | -------------------- | --------------------------------- |
-| GET    | `/api/health`                               | Public               | API availability and runtime      |
-| GET    | `/api/health/db`                            | Public               | Database connectivity             |
-| GET    | `/api/topics`                               | Public               | Topics with lessons and resources |
-| GET    | `/api/topics/{slug}`                        | Public               | One topic, or HTTP 404            |
-| POST   | `/api/auth/login`                           | Public, rate limited | Administrator sign-in             |
-| GET    | `/api/auth/me`                              | Admin                | Current administrator identity    |
-| POST   | `/api/topics`                               | Admin                | Create a topic                    |
-| PUT    | `/api/topics/{slug}`                        | Admin                | Update a topic                    |
-| POST   | `/api/topics/{slug}/lessons`                | Admin                | Add a lesson                      |
-| POST   | `/api/topics/{slug}/resources`              | Admin                | Add a resource                    |
-| PUT    | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Edit a lesson                     |
-| DELETE | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Delete a lesson                   |
-| PUT    | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Edit a resource                   |
-| DELETE | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Delete a resource                 |
+| Method | Endpoint                                    | Access               | Purpose                                       |
+| ------ | ------------------------------------------- | -------------------- | --------------------------------------------- |
+| GET    | `/api/health`                               | Public               | API availability and runtime                  |
+| GET    | `/api/health/db`                            | Public               | Database connectivity                         |
+| GET    | `/api/topics`                               | Public               | Topics with lessons and resources             |
+| GET    | `/api/topics/{slug}`                        | Public               | One topic, or HTTP 404                        |
+| POST   | `/api/auth/login`                           | Public, rate limited | Administrator sign-in                         |
+| GET    | `/api/auth/me`                              | Admin                | Current administrator identity                |
+| POST   | `/api/topics`                               | Admin                | Create a topic                                |
+| PUT    | `/api/topics/{slug}`                        | Admin                | Update a topic                                |
+| POST   | `/api/topics/{slug}/lessons`                | Admin                | Add a lesson                                  |
+| POST   | `/api/topics/{slug}/resources`              | Admin                | Add a resource                                |
+| PUT    | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Edit a lesson                                 |
+| DELETE | `/api/topics/{slug}/lessons/{lessonId}`     | Admin                | Delete a lesson                               |
+| PUT    | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Edit a resource                               |
+| DELETE | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Delete a resource                             |
+| DELETE | `/api/topics/{slug}`                        | Admin                | Delete a topic with its lessons and resources |
 
 ## Checks
 
