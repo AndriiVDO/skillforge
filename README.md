@@ -305,6 +305,10 @@ sets `AUTH_COOKIE_SECURE=false`.
 For an HTTPS deployment, set `AUTH_COOKIE_SECURE=true`, configure secret
 delivery, and protect persisted Data Protection keys at rest.
 
+## Operations guides
+
+- [PostgreSQL backup and restore](docs/database-backup.md)
+
 ## Roadmap
 
 - [x] Learning dashboard and topic pages
