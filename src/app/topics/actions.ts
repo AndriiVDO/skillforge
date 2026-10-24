@@ -88,7 +88,7 @@ export async function saveTopic(
 
     if (response.status === 404) {
       return fail(
-        "The topic or editing endpoint was not found. Check that the API runs in Development.",
+        "The topic was not found. Refresh the catalog and try again.",
       );
     }
 
@@ -170,7 +170,7 @@ export async function addLesson(
 
     if (response.status === 404) {
       return fail(
-        "The topic or editing endpoint was not found. Check that the API runs in Development.",
+        "The topic was not found. Refresh the catalog and try again.",
       );
     }
 
@@ -261,7 +261,7 @@ export async function addResource(
 
     if (response.status === 404) {
       return fail(
-        "The topic or editing endpoint was not found. Check that the API runs in Development.",
+        "The topic was not found. Refresh the catalog and try again.",
       );
     }
 

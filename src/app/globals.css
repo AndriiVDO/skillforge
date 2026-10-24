@@ -1079,3 +1079,74 @@ p {
   flex-wrap: wrap;
   gap: 12px;
 }
+
+.content-manager > h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.content-editor {
+  margin-top: 0.75rem;
+  border: 1px solid #343d55;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.content-editor > summary {
+  padding: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.content-editor > summary:focus-visible {
+  outline: 2px solid #b6bdff;
+  outline-offset: -3px;
+}
+
+.content-editor[open] > summary {
+  border-bottom: 1px solid #343d55;
+}
+
+.content-editor > form {
+  padding: 1rem;
+}
+
+.content-editor-fields {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.content-editor-fields:disabled {
+  opacity: 0.65;
+}
+
+.delete-confirmation {
+  display: grid;
+  gap: 1rem;
+}
+
+.confirmation-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.confirmation-label input {
+  width: auto;
+  margin-top: 0.25rem;
+}
+
+.button-danger {
+  background: #842d3a;
+  color: #fff;
+  border: 1px solid #dc7c89;
+}
+
+.button-danger:hover {
+  background: #9c3545;
+}

@@ -17,6 +17,9 @@ function isLesson(value: unknown): value is Lesson {
 function isResource(value: unknown): value is LearningResource {
   if (
     !isObject(value) ||
+    typeof value.id !== "number" ||
+    !Number.isSafeInteger(value.id) ||
+    value.id <= 0 ||
     typeof value.title !== "string" ||
     typeof value.url !== "string"
   ) {
@@ -26,7 +29,7 @@ function isResource(value: unknown): value is LearningResource {
   try {
     const url = new URL(value.url);
 
-    return url.protocol === "https:" || url.protocol === "http:";
+    return ["https:", "http:"].includes(url.protocol) && Boolean(url.hostname);
   } catch {
     return false;
   }
@@ -73,6 +76,7 @@ export const getApiTopics = cache(async (): Promise<Topic[] | null> => {
 
     const slugs = new Set<string>();
     const lessonIds = new Set<string>();
+    const resourceIds = new Set<number>();
 
     for (const topic of data) {
       if (slugs.has(topic.slug)) {
@@ -87,6 +91,14 @@ export const getApiTopics = cache(async (): Promise<Topic[] | null> => {
         }
 
         lessonIds.add(lesson.id);
+      }
+
+      for (const resource of topic.resources) {
+        if (resourceIds.has(resource.id)) {
+          throw new Error(`Duplicate resource ID: ${resource.id}`);
+        }
+
+        resourceIds.add(resource.id);
       }
     }
 
