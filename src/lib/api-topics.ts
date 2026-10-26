@@ -1,5 +1,8 @@
 import { cache } from "react";
 import type { Lesson, LearningResource, Topic } from "@/lib/topics";
+import "server-only";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE } from "@/lib/admin-session";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -43,6 +46,7 @@ function isTopic(value: unknown): value is Topic {
     typeof value.category === "string" &&
     typeof value.description === "string" &&
     typeof value.outcome === "string" &&
+    typeof value.isPublished === "boolean" &&
     Array.isArray(value.lessons) &&
     value.lessons.every(isLesson) &&
     Array.isArray(value.resources) &&
@@ -59,7 +63,10 @@ export const getApiTopics = cache(async (): Promise<Topic[] | null> => {
   }
 
   try {
+    const token = (await cookies()).get(ADMIN_COOKIE)?.value;
+
     const response = await fetch(`${baseUrl}/api/topics`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });

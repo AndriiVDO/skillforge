@@ -242,6 +242,7 @@ public static class LearningContentSeed
                 Category = category,
                 Description = description,
                 Outcome = outcome,
+                IsPublished = true,
                 TaskCount = lessons.Length
             }
         );

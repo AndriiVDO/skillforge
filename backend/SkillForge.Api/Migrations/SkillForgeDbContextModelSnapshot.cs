@@ -520,6 +520,9 @@ namespace SkillForge.Api.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasDefaultValue("");
 
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Outcome")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -553,6 +556,7 @@ namespace SkillForge.Api.Migrations
                             Id = 1,
                             Category = "Development",
                             Description = "Build interfaces and understand how browsers, components, and servers work together.",
+                            IsPublished = true,
                             Outcome = "Build and publish the first version of SkillForge.",
                             Slug = "web-development",
                             TaskCount = 4,
@@ -563,6 +567,7 @@ namespace SkillForge.Api.Migrations
                             Id = 2,
                             Category = "Content",
                             Description = "Structure content and let editors manage it independently from application code.",
+                            IsPublished = true,
                             Outcome = "Create a small learning-article library powered by a CMS.",
                             Slug = "cms",
                             TaskCount = 3,
@@ -573,6 +578,7 @@ namespace SkillForge.Api.Migrations
                             Id = 3,
                             Category = "Systems",
                             Description = "Navigate a Linux system and understand files, permissions, processes, and logs.",
+                            IsPublished = true,
                             Outcome = "Document how to run and troubleshoot an application on Linux.",
                             Slug = "linux",
                             TaskCount = 3,
@@ -583,6 +589,7 @@ namespace SkillForge.Api.Migrations
                             Id = 4,
                             Category = "Operations",
                             Description = "Make application builds, checks, and deployments repeatable.",
+                            IsPublished = true,
                             Outcome = "Run a project with Docker and verify it through GitHub Actions.",
                             Slug = "devops",
                             TaskCount = 3,
@@ -593,6 +600,7 @@ namespace SkillForge.Api.Migrations
                             Id = 5,
                             Category = "Security",
                             Description = "Understand how applications protect accounts, input, and private data.",
+                            IsPublished = true,
                             Outcome = "Document and fix a security issue in a local training application.",
                             Slug = "web-security",
                             TaskCount = 3,

@@ -5,6 +5,7 @@ using SkillForge.Api.Endpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -133,11 +134,20 @@ app.MapGet("/api/health/db", async (
 });
 
 app.MapGet("/api/topics", async (
+    ClaimsPrincipal user,
+    HttpResponse response,
     SkillForgeDbContext db,
     CancellationToken cancellationToken) =>
 {
+    response.Headers.CacheControl = "no-store";
+
+    var canReadDrafts =
+        user.Identity?.IsAuthenticated == true &&
+        user.IsInRole("Admin");
+
     var topics = await db.Topics
         .AsNoTracking()
+        .Where(topic => topic.IsPublished || canReadDrafts)
         .Include(topic => topic.Lessons)
         .Include(topic => topic.Resources)
         .AsSplitQuery()
@@ -149,18 +159,26 @@ app.MapGet("/api/topics", async (
 
 app.MapGet("/api/topics/{slug}", async (
     string slug,
+    ClaimsPrincipal user,
+    HttpResponse response,
     SkillForgeDbContext db,
     CancellationToken cancellationToken) =>
 {
+    response.Headers.CacheControl = "no-store";
+
+    var canReadDrafts =
+        user.Identity?.IsAuthenticated == true &&
+        user.IsInRole("Admin");
+
     var topic = await db.Topics
         .AsNoTracking()
+        .Where(topic => topic.IsPublished || canReadDrafts)
         .Include(topic => topic.Lessons)
         .Include(topic => topic.Resources)
         .AsSplitQuery()
         .SingleOrDefaultAsync(
             topic => topic.Slug == slug,
-            cancellationToken
-        );
+            cancellationToken);
 
     if (topic is null)
     {
@@ -186,6 +204,7 @@ static TopicResponse ToResponse(LearningTopic topic)
         topic.Category,
         topic.Description,
         topic.Outcome,
+        topic.IsPublished,
         topic.Lessons.Count,
         topic.Lessons
             .OrderBy(lesson => lesson.Position)
@@ -212,6 +231,7 @@ public sealed record TopicResponse(
     string Category,
     string Description,
     string Outcome,
+    bool IsPublished,
     int TaskCount,
     LessonResponse[] Lessons,
     ResourceResponse[] Resources

@@ -16,6 +16,7 @@ export type Topic = {
   category: string;
   description: string;
   outcome: string;
+  isPublished: boolean;
   lessons: Lesson[];
   resources: LearningResource[];
 };

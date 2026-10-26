@@ -15,6 +15,7 @@ public sealed class LearningTopic
     public string Outcome { get; set; } = "";
 
     public int TaskCount { get; set; }
+    public bool IsPublished { get; set; }
 
     public List<LearningLesson> Lessons { get; set; } = [];
 
