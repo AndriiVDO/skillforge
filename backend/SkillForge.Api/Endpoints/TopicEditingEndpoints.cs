@@ -21,7 +21,11 @@ public static class TopicEditingEndpoints
 
         app.MapPost("/api/topics/{slug}/resources", AddResourceAsync)
             .RequireAuthorization("Admin");
+
         app.MapDelete("/api/topics/{slug}", DeleteAsync)
+            .RequireAuthorization("Admin");
+
+        app.MapPut("/api/topics/{slug}/publication", SetPublicationAsync)
             .RequireAuthorization("Admin");
     }
 
@@ -56,7 +60,8 @@ public static class TopicEditingEndpoints
             Category = input.Category!.Trim(),
             Description = input.Description!.Trim(),
             Outcome = input.Outcome!.Trim(),
-            TaskCount = 0
+            TaskCount = 0,
+            IsPublished = false
         };
 
         db.Topics.Add(topic);
@@ -335,6 +340,35 @@ public static class TopicEditingEndpoints
             : Results.NoContent();
     }
 
+    private static async Task<IResult> SetPublicationAsync(
+    string slug,
+    PublicationInput input,
+    SkillForgeDbContext db,
+    CancellationToken cancellationToken)
+    {
+        if (input.IsPublished is null)
+        {
+            return Results.ValidationProblem(
+                new Dictionary<string, string[]>
+                {
+                    ["isPublished"] = ["Specify true or false."]
+                }
+            );
+        }
+
+        var updated = await db.Topics
+            .Where(topic => topic.Slug == slug)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    topic => topic.IsPublished,
+                    input.IsPublished.Value),
+                cancellationToken);
+
+        return updated == 0
+            ? Results.NotFound(new { message = "Topic not found." })
+            : Results.NoContent();
+    }
+
     private static Dictionary<string, string[]> Validate(TopicInput input)
     {
         var errors = new Dictionary<string, string[]>();
@@ -403,3 +437,5 @@ public sealed record ResourceInput(
     string? Title,
     string? Url
 );
+
+public sealed record PublicationInput(bool? IsPublished);

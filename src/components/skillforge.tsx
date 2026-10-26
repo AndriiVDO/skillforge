@@ -3,11 +3,12 @@ import { TopicNotes } from "@/components/topic-notes";
 import { LessonForm } from "@/components/lesson-form";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import type { Topic } from "@/lib/topics";
 import { ResourceForm } from "@/components/resource-form";
 import { LearningContentManager } from "@/components/learning-content-manager";
 import { DeleteTopicForm } from "@/components/delete-topic-form";
+import { TopicPublicationForm } from "@/components/topic-publication-form";
 
 const STORAGE_KEY = "skillforge.completed-lessons.v1";
 const PROGRESS_EVENT = "skillforge-progress";
@@ -86,6 +87,20 @@ function getCompletedCount(topic: Topic, completed: string[]) {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="main-content" role="status">
+          <p>Loading SkillForge…</p>
+        </div>
+      }
+    >
+      <AppShellContent>{children}</AppShellContent>
+    </Suspense>
+  );
+}
+
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const navigation = [
@@ -178,6 +193,7 @@ function TopicCard({
         </span>
       </div>
 
+      {!topic.isPublished && <span className="badge">Draft</span>}
       <h3>{topic.title}</h3>
       <p>{topic.description}</p>
 
@@ -430,6 +446,14 @@ export function TopicDetail({
         <h1>{topic.title}</h1>
         <p>{topic.description}</p>
       </section>
+
+      {isAdmin && (
+        <TopicPublicationForm
+          key={`publication-${topic.slug}`}
+          slug={topic.slug}
+          isPublished={topic.isPublished}
+        />
+      )}
 
       {isAdmin && (
         <div className="editor-actions">

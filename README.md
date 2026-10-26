@@ -22,6 +22,7 @@ Explore technical topics, track practical tasks, and keep personal notes. Admini
 - Automated build and integration checks
 - Administrator forms for editing lessons and resources
 - Explicit confirmation before deleting learning content
+- Draft and published topics with administrator-only draft access
 
 ## Screenshots
 
@@ -250,6 +251,7 @@ available when the application runs in Docker.
 | PUT    | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Edit a resource                               |
 | DELETE | `/api/topics/{slug}/resources/{resourceId}` | Admin                | Delete a resource                             |
 | DELETE | `/api/topics/{slug}`                        | Admin                | Delete a topic with its lessons and resources |
+| PUT    | `/api/topics/{slug}/publication`            | Admin                | Publish a topic or move it to drafts          |
 
 ## Checks
 
