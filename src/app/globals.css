@@ -1150,3 +1150,32 @@ p {
 .button-danger:hover {
   background: #9c3545;
 }
+
+.not-found-page {
+  display: grid;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.not-found-panel {
+  width: 100%;
+  max-width: 680px;
+  margin-inline: auto;
+  color: var(--text);
+}
+
+.not-found-panel h1 {
+  margin: 18px 0;
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  line-height: 1.15;
+}
+
+.not-found-panel p {
+  max-width: 520px;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.8;
+}
