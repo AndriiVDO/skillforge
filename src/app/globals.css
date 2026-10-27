@@ -1179,3 +1179,46 @@ p {
   font-size: 15px;
   line-height: 1.8;
 }
+
+.catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.catalog-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.catalog-filter:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.catalog-filter.is-active {
+  border-color: var(--accent);
+  background: #1c2541;
+  color: #d5ddff;
+}
+
+.catalog-filter-count {
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--background);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}

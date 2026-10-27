@@ -354,12 +354,46 @@ export function TopicsCatalog({
 }) {
   const { completed, ready } = useProgress();
   const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"all" | "published" | "drafts">("all");
 
-  const filteredTopics = topics.filter((topic) =>
-    `${topic.title} ${topic.category} ${topic.description}`
+  const availableTopics = isAdmin
+    ? topics
+    : topics.filter((topic) => topic.isPublished);
+
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredTopics = availableTopics.filter((topic) => {
+    const matchesQuery = `${topic.title} ${topic.category} ${topic.description}`
       .toLowerCase()
-      .includes(query.trim().toLowerCase()),
-  );
+      .includes(normalizedQuery);
+
+    const matchesStatus =
+      !isAdmin ||
+      status === "all" ||
+      (status === "published" && topic.isPublished) ||
+      (status === "drafts" && !topic.isPublished);
+
+    return matchesQuery && matchesStatus;
+  });
+
+  const publishedCount = availableTopics.filter(
+    (topic) => topic.isPublished,
+  ).length;
+
+  const filters = [
+    { value: "all", label: "All", count: availableTopics.length },
+    { value: "published", label: "Published", count: publishedCount },
+    {
+      value: "drafts",
+      label: "Drafts",
+      count: availableTopics.length - publishedCount,
+    },
+  ] as const;
+
+  function resetFilters() {
+    setQuery("");
+    setStatus("all");
+  }
 
   return (
     <>
@@ -388,10 +422,34 @@ export function TopicsCatalog({
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <span className="muted" role="status">
-          {filteredTopics.length} topics
+
+        <span className="muted" role="status" aria-live="polite">
+          {filteredTopics.length} of {availableTopics.length} topics
         </span>
       </div>
+
+      {isAdmin && (
+        <div
+          className="catalog-filters"
+          role="group"
+          aria-label="Filter topics by publication status"
+        >
+          {filters.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              className={`catalog-filter ${
+                status === filter.value ? "is-active" : ""
+              }`}
+              aria-pressed={status === filter.value}
+              onClick={() => setStatus(filter.value)}
+            >
+              {filter.label}
+              <span className="catalog-filter-count">{filter.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="topics-grid">
         {filteredTopics.map((topic) => (
@@ -406,15 +464,29 @@ export function TopicsCatalog({
 
       {filteredTopics.length === 0 && (
         <div className="empty-state">
-          <h2>No matching topics</h2>
-          <p>Try another name or category.</p>
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => setQuery("")}
-          >
-            Clear search
-          </button>
+          <h2>
+            {availableTopics.length === 0
+              ? "No topics available yet"
+              : "No matching topics"}
+          </h2>
+
+          <p>
+            {availableTopics.length === 0
+              ? isAdmin
+                ? "Create your first topic to start building the catalog."
+                : "Check back soon for new learning content."
+              : "Try another search or reset the filters."}
+          </p>
+
+          {(query !== "" || (isAdmin && status !== "all")) && (
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={resetFilters}
+            >
+              Reset filters
+            </button>
+          )}
         </div>
       )}
     </>
