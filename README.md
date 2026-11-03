@@ -310,6 +310,7 @@ delivery, and protect persisted Data Protection keys at rest.
 ## Operations guides
 
 - [PostgreSQL backup and restore](docs/database-backup.md)
+- [HTTP basics and practical checks](docs/http-basics.md)
 
 ## Roadmap
 
