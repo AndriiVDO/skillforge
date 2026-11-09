@@ -248,3 +248,4 @@ public sealed record ResourceResponse(
     string Title,
     string Url
 );
+public partial class Program { }
