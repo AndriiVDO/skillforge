@@ -299,6 +299,23 @@ topic details, validation, persistence, and HTTP 404 responses.
 - Docker persists API Data Protection keys in the `api_keys` volume,
   allowing unexpired administrator sessions to survive API container recreation.
 
+## Technical decisions
+
+| Decision                                                                               | Why                                                                                                                                |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Next.js server talks to the API; the browser never calls it directly                   | The access token stays on the server side and never reaches client-side JavaScript.                                                |
+| Access token in an `HttpOnly` cookie                                                   | JavaScript cannot read it, which limits token theft through XSS. `Secure` is configurable for HTTPS deployments.                   |
+| ASP.NET Core Identity with bearer tokens, 30-minute expiry                             | Reuses a proven password hashing, lockout and role system instead of a custom one. Short-lived tokens limit the damage of a leak.  |
+| No public registration; admin created by a provisioning command                        | The app has a single trusted role, so an open sign-up endpoint would only add attack surface.                                      |
+| Strong password policy and lockout (12+ characters, 5 failed attempts, 10-minute lock) | Slows down password guessing against the only privileged account.                                                                  |
+| Rate limiter on the login endpoint                                                     | Adds a second layer against brute force on top of account lockout.                                                                 |
+| Authorization policy `Admin` on every write endpoint                                   | Reads are public, writes are denied by default unless the policy passes.                                                           |
+| Separate `migrate` service in Docker Compose                                           | Schema changes are applied once, before the API starts, instead of on every API boot. The API waits for it to finish successfully. |
+| PostgreSQL ports bound to `127.0.0.1`                                                  | The database is reachable from the local machine only.                                                                             |
+| Data Protection keys persisted in a named volume                                       | Unexpired sessions survive container recreation.                                                                                   |
+| Progress and notes in browser storage                                                  | Keeps the learner experience account-free; the trade-off is no sync between devices.                                               |
+| Integration checks run over HTTP against a real PostgreSQL in CI                       | Tests the full path (routing, auth, EF Core, migrations) the way a client uses it, rather than mocking the database.               |
+
 ## Deployment notes
 
 The supplied Compose configuration is intended for local HTTP use and
@@ -311,6 +328,15 @@ delivery, and protect persisted Data Protection keys at rest.
 
 - [PostgreSQL backup and restore](docs/database-backup.md)
 - [HTTP basics and practical checks](docs/http-basics.md)
+
+## Known limitations
+
+- No live demo yet.
+- Automated checks are HTTP-level integration scripts; there are no unit tests for the API.
+- The login rate limiter is one shared window for all clients, not a per-IP limit.
+- There is a single administrator role: no password reset flow, no refresh tokens, no audit log.
+- The supplied Docker Compose setup is for local HTTP use only; HTTPS deployment needs a reverse proxy and secret management.
+- Progress and notes are stored per browser and do not sync across devices.
 
 ## Roadmap
 
